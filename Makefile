@@ -9,7 +9,7 @@ docker-warning := ""
 RED=\033[0;31m
 GREEN=\033[0;32m
 NC=\033[0m # No Color
-version := 0.1.$(shell git rev-list HEAD --count)
+version := 1.0.$(shell git rev-list HEAD --count)
 
 dockerhub := rolfwessels/Bumbershoot
 
@@ -29,11 +29,11 @@ endif
 
 
 ifeq ($(current-branch), master)
-  docker-tags := -t $(dockerhub):alpha -t $(dockerhub):latest -t $(dockerhub):v$(version)
+  version-tag :=  $(version)
 else ifeq ($(current-branch), develop)
-  docker-tags := -t $(dockerhub):beta 
+  version-tag := $(version)-beta
 else
-  docker-tags := -t $(dockerhub):alpha 
+  version-tag := $(version)-alpha
 endif
 
 # Docker Warning
@@ -84,15 +84,15 @@ build: down
 
 version:
 	@echo "${GREEN}Setting version number $(version) ${NC}"
-	@echo '{ "version": "${version}" }' > src/version.json
+	@sed 's/Version>.*</Version>$(version-tag)</' src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj > src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch  
+	@mv  src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
 
-publish: 
-	@echo  "${GREEN}Publish branch $(current-branch) to $(docker-tags) as user ${DOCKER_USER}${NC}"
-	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-	@echo  "${GREEN}Building $(docker-tags)${NC}"
-	@cd src && docker build ${docker-tags} .
-	@echo  "${GREEN}Pusing to $(docker-tags)${NC}"
-	@docker push --all-tags $(dockerhub)
+publish:  version
+	@echo  "${GREEN}Publish branch $(current-branch) to $(version-tag)${NC}"
+	dotnet build --configuration Release
+	dotnet pack src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
+	dotnet nuget push src/Bumbershoot.Utilities/bin/Debug/Bumbershoot.Utilities.*.nupkg -k ${NUGET_KEY} -s https://api.nuget.org/v3/index.json
+
 
 restore: 
 	@echo -e "${GREEN}Restore $(project) nuget packages${NC}"
