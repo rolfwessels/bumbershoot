@@ -1,6 +1,6 @@
 # Bumbershoot
 
-General utils
+General C# utils
 
 ## Getting started
 

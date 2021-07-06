@@ -23,7 +23,6 @@ jobs:
 
       - name: docker publish
         env:
-          SMokker: ${{secrets.DOCKER_USER}}
-          Smokker: ${{secrets.DOCKER_PASSWORD}}
+          NUGET_KEY: ${{secrets.DOCKER_USER}}
         run: |
           make publish
