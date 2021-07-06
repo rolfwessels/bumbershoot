@@ -29,11 +29,11 @@ endif
 
 
 ifeq ($(current-branch), master)
-  docker-tags := -t $(dockerhub):alpha -t $(dockerhub):latest -t $(dockerhub):v$(version)
+  version-tag :=  $(version)
 else ifeq ($(current-branch), develop)
-  docker-tags := -t $(dockerhub):beta 
+  version-tag := $(version)-beta
 else
-  docker-tags := -t $(dockerhub):alpha 
+  version-tag := $(version)-alpha
 endif
 
 # Docker Warning
@@ -84,11 +84,11 @@ build: down
 
 version:
 	@echo "${GREEN}Setting version number $(version) ${NC}"
-	@sed 's/Version>.*</Version>${version}.0</' src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj > src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch  
+	@sed 's/Version>.*</Version>$(version-tag)</' src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj > src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch  
 	@mv  src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
 
 publish:  version
-	@echo  "${GREEN}Publish branch $(current-branch) to $(docker-tags)${NC}"
+	@echo  "${GREEN}Publish branch $(current-branch) to $(version-tag)${NC}"
 	dotnet build --configuration Release --no-restore
 	dotnet pack src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
 	
