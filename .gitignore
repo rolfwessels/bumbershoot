@@ -10,8 +10,8 @@ obj/
 project.lock.json
 .DS_Store
 /TestResult.xml
-/CoreDocker.ncrunchsolution.user
-/_NCrunch_CoreDocker/**/*
+/*.ncrunchsolution.user
+/_NCrunch_*/**/*
 *.user
 **/*.ncrunchproject
 **/*nCrunchTemp*
