@@ -6,7 +6,7 @@
     <PackageId>Bumbershoot.Utilities</PackageId>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <Version>3.0.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
