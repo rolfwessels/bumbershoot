@@ -1,0 +1,25 @@
+version: "3.5"
+networks:
+  dev-network:
+
+services:
+  src:
+    container_name: bumbershoot-utils
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/Bumbershoot"
+      - "./.aws:/root/.aws"
+      #find src* | grep  '/bin$' | sed 's/^/ - Bumbershoot\//'
+      - /Bumbershoot/src/Bumbershoot.Utilities/bin
+      #find src* | grep  '/obj$' | sed 's/^/ - /Bumbershoot\//'
+      - /Bumbershoot/test/Bumbershoot.Utilities.Tests/obj
+
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    entrypoint: top -b
+    logging:
+      driver: none
+    networks:
+      - dev-network
