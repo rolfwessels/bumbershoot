@@ -89,10 +89,9 @@ version:
 
 publish:  version
 	@echo  "${GREEN}Publish branch $(current-branch) to $(version-tag)${NC}"
-	dotnet build --configuration Release --no-restore
+	dotnet build --configuration Release
 	dotnet pack src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
-	
-# dotnet nuget push src/Bumbershoot.Utilities/bin/Debug/Bumbershoot.Utilities.*.nupkg -k ${NUGET_KEY} -s https://api.nuget.org/v3/index.json
+	dotnet nuget push src/Bumbershoot.Utilities/bin/Debug/Bumbershoot.Utilities.*.nupkg -k ${NUGET_KEY} -s https://api.nuget.org/v3/index.json
 
 
 # export NUGET_KEY=oy2fnfbi55poeordojpagooladbo2fhepopqerx2yghrcm
