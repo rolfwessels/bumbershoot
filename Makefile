@@ -94,7 +94,6 @@ publish:  version
 	dotnet nuget push src/Bumbershoot.Utilities/bin/Debug/Bumbershoot.Utilities.*.nupkg -k ${NUGET_KEY} -s https://api.nuget.org/v3/index.json
 
 
-# export NUGET_KEY=oy2fnfbi55poeordojpagooladbo2fhepopqerx2yghrcm
 restore: 
 	@echo -e "${GREEN}Restore $(project) nuget packages${NC}"
 	dotnet restore
