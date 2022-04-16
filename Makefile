@@ -32,7 +32,7 @@ ifeq ($(current-branch), main)
   version-tag :=  $(version)
 else ifeq ($(current-branch), develop)
   version-tag := $(version)-beta
-else
+else  version := 1.0.$(shell git rev-list main --count).$(shell git rev-list main..HEAD --count)
   version-tag := $(version)-alpha
 endif
 
