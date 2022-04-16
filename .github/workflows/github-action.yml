@@ -16,7 +16,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.1.x
+          dotnet-version: 6.0.x
 
       - name: Test
         run: make test
@@ -26,13 +26,14 @@ jobs:
     env:
       RedisHost: localhost
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2        with:
+          fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.1.x
+          dotnet-version: 6.0.x
 
-      - name: docker publish
+      - name: make publish
         env:
           NUGET_KEY: ${{secrets.NUGET_KEY}}
         run: |
