@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Text.Json;
+using Bumbershoot.Utilities.Helpers;
 
 namespace Bumbershoot.Utilities.Serializer
 {
@@ -33,7 +34,7 @@ namespace Bumbershoot.Utilities.Serializer
 
         public object Deserialize(Type type, ReadOnlyMemory<byte> value)
         {
-            return Deserialize(type, Encoding.UTF8.GetString(value.ToArray()));
+            return Deserialize(type, value.ToArray().AsUtf8String());
         }
 
         public object Deserialize(Type type, string value)

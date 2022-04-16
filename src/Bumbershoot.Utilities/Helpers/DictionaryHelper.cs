@@ -11,14 +11,13 @@ namespace Bumbershoot.Utilities.Helpers
             if (contextContextData == null) throw new ArgumentNullException(nameof(contextContextData));
             if (contextContextData.TryGetValue(key, out var result))
                 return result;
-            else
-                lock (contextContextData)
-                {
-                    if (contextContextData.TryGetValue(key, out var result1)) return result1;
-                    var value1 = value();
-                    contextContextData.Add(key, value1);
-                    return value1;
-                }
+            lock (contextContextData)
+            {
+                if (contextContextData.TryGetValue(key, out var result1)) return result1;
+                var found = value();
+                contextContextData.Add(key, found);
+                return found;
+            }
         }
     }
 }
