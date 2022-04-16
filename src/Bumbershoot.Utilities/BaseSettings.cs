@@ -24,7 +24,7 @@ namespace Bumbershoot.Utilities
             return Convert.ToInt32(ReadConfigValue(key, defaultValue.ToString()));
         }
 
-        protected string ReadConfigValue(string key, string defaultValue)
+        protected virtual string ReadConfigValue(string key, string defaultValue)
         {
             var section = string.IsNullOrWhiteSpace(_configGroup)
                 ? _configuration
