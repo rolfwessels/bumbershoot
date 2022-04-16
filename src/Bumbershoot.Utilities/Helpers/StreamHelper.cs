@@ -30,16 +30,20 @@ namespace Bumbershoot.Utilities.Helpers
             return combine;
         }
 
-        public static (byte[], byte[]) Split(this byte[] a1, int firstSize)
+        public static (byte[], byte[]) Split(this byte[] bytes, int firstArrayLength)
         {
-            var rv = new byte[firstSize];
-            var rv1 = new byte[a1.Length - firstSize];
-            Buffer.BlockCopy(a1, 0, rv, 0, rv.Length);
-            Buffer.BlockCopy(a1, firstSize, rv1, 0, rv1.Length);
-            return (rv, rv1);
+            var one = new byte[firstArrayLength];
+            var two = new byte[bytes.Length - firstArrayLength];
+            return Split(bytes,  one, two);
         }
 
-
+        private static (byte[], byte[]) Split(byte[] bytes, byte[] one, byte[] two)
+        {
+            Buffer.BlockCopy(bytes, 0, one, 0, one.Length);
+            Buffer.BlockCopy(bytes, one.Length, two, 0, two.Length);
+            return (one, two);
+        }
+        
         public static byte[] ToBytes(this Stream input)
         {
             if (input is MemoryStream memoryStream) return memoryStream.ToArray();
