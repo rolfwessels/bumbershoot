@@ -28,7 +28,7 @@ endif
 
 
 
-ifeq ($(current-branch), master)
+ifeq ($(current-branch), main)
   version-tag :=  $(version)
 else ifeq ($(current-branch), develop)
   version-tag := $(version)-beta
