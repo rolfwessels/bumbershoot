@@ -5,6 +5,7 @@ using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Helpers
 {
+
     [TestFixture]
     public class StringHelperTests
     {
