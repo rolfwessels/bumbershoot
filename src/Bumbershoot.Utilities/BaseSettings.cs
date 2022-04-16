@@ -13,11 +13,15 @@ namespace Bumbershoot.Utilities
             _configuration = configuration;
             _configGroup = configGroup;
         }
-
-
+        
         protected bool ReadConfigValue(string key, bool defaultValue)
         {
             return Convert.ToBoolean(ReadConfigValue(key, defaultValue.ToString()));
+        }
+        
+        protected int ReadConfigValue(string key, int defaultValue)
+        {
+            return Convert.ToInt32(ReadConfigValue(key, defaultValue.ToString()));
         }
 
         protected string ReadConfigValue(string key, string defaultValue)
