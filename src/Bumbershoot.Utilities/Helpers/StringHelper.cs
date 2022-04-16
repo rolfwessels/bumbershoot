@@ -13,8 +13,7 @@ namespace Bumbershoot.Utilities.Helpers
             foreach (var moreUri in addition) uri = EnsureEndsWith(uri, "/") + EnsureDoesNotStartWith(moreUri, "/");
             return uri;
         }
-
-
+        
         public static string ToInitialCase(this string text)
         {
             return text.Substring(0, 1).ToUpper() + text.Substring(1).ToLower();
@@ -60,14 +59,18 @@ namespace Bumbershoot.Utilities.Helpers
         public static string Base64Decode(this string base64EncodedData)
         {
             if (base64EncodedData == null) return null;
-            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
-            return Encoding.UTF8.GetString(base64EncodedBytes);
+            return Convert.FromBase64String(base64EncodedData).AsUtf8String();
         }
 
         public static string Base64Encode(this string plainText)
         {
             if (plainText == null) return null;
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+            return Base64String(plainTextBytes);
+        }
+
+        public static string Base64String(this byte[] plainTextBytes)
+        {
             return Convert.ToBase64String(plainTextBytes);
         }
 

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using Bumbershoot.Utilities.Helpers;
 using FluentAssertions;
 using NUnit.Framework;
@@ -93,6 +94,33 @@ namespace Bumbershoot.Utilities.Tests.Helpers
             output.Length.Should().Be(4);
             output.Position.Should().Be(0);
         }
+
+        [Test]
+        public void Combine_GivenTwoByteArrays_ShouldCombineThem()
+        {
+            // arrange
+            var input = "one".ToBytes();
+            var second = "2".ToBytes();
+            // action
+            var output = input.Combine(second);
+            // assert
+            output.Length.Should().Be(4);
+            output.AsUtf8String().Should().Be("one2");
+        }
+
+        [Test]
+        public void Split_GivenTwoByteArrays_ShouldCombineThem()
+        {
+            // arrange
+            var input = "one".ToBytes();
+            var second = "2".ToBytes();
+            // action
+            var (one,two) = input.Combine(second).Split(3);
+            // assert
+            one.AsUtf8String().Should().Be("one");
+            two.AsUtf8String().Should().Be("2");
+        }
+
 
 
         [Test]

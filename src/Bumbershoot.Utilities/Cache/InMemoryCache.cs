@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache
 {
-    public class SimpleObjectCache : ISimpleObjectCache
+    public class InMemoryCache : ISimpleObjectCache
     {
         private readonly TimeSpan _defaultCacheTime;
         private readonly ConcurrentDictionary<string, CacheHolder> _objectCache;
         private DateTime _nextExpiry;
 
-        public SimpleObjectCache(TimeSpan defaultCacheTime)
+        public InMemoryCache(TimeSpan defaultCacheTime)
         {
             _defaultCacheTime = defaultCacheTime;
             _objectCache = new ConcurrentDictionary<string, CacheHolder>();
@@ -45,6 +45,14 @@ namespace Bumbershoot.Utilities.Cache
             var cacheHolder = new CacheHolder(value, DateTimeOffset.Now.Add(_defaultCacheTime));
             _objectCache.AddOrUpdate(key, s => cacheHolder, (s, holder) => cacheHolder);
             return value;
+        }
+
+        public T GetOrSet<T>(string value, Func<T> func) where T : class
+        {
+            var cacheHolder = _objectCache.GetOrAdd(value, s => new CacheHolder(func(), DateTimeOffset.Now.Add(_defaultCacheTime)));
+            if (!cacheHolder.IsExpired)
+                return cacheHolder.AsValue<T>();
+            return Set(value, func());
         }
 
         public TValue Get<TValue>(string key) where TValue : class
@@ -103,5 +111,7 @@ namespace Bumbershoot.Utilities.Cache
         }
 
         #endregion
+
+       
     }
 }
