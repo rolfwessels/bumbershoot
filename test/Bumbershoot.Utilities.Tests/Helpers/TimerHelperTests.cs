@@ -106,5 +106,30 @@ public class TimerHelperTests
         backoff.Should().Contain(4);
 
     }
-    
+
+    [Test]
+    public async Task RetryTryAsync_GivenSample_ShouldOutput()
+    {
+        var retries = 4;
+        var retryDelay = 10;
+        // action
+        async Task CallToRetry()
+        {
+            await Task.Delay(1);
+            throw new ArgumentException();
+        }
+        void CallBack(ArgumentException _, int i) => Console.WriteLine($"WARN: Failed with '{_.Message}', will retry in {i}ms.");
+        try
+        {   
+            await TimerHelper.RetryAsync<ArgumentException>(CallToRetry, retries, retryDelay, CallBack);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error: {e.Message}");
+        }
+        // assert
+        
+
+    }
+
 }
