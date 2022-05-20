@@ -8,7 +8,7 @@ namespace Bumbershoot.Utilities.Tests.Cache
     [TestFixture]
     public class InMemoryCacheTests
     {
-        private InMemoryCache _inMemoryCache;
+        private ISimpleObjectCache _inMemoryCache;
 
         #region Setup/Teardown
 
@@ -31,7 +31,7 @@ namespace Bumbershoot.Utilities.Tests.Cache
             Setup();
             _inMemoryCache.Set("value", "newValue");
             // action
-            var result = _inMemoryCache.Get("value", () => { return "nootNe"; });
+            var result = _inMemoryCache.Get<string>("value");
             // assert
             result.Should().Be("newValue");
         }
@@ -41,9 +41,9 @@ namespace Bumbershoot.Utilities.Tests.Cache
         {
             // arrange
             Setup();
-            _inMemoryCache.Get("value", () => { return "newValue"; });
+            _inMemoryCache.GetOrSet("value", () => { return "newValue"; });
             // action
-            var result = _inMemoryCache.Get("value", () => { return "nootNe"; });
+            var result = _inMemoryCache.Get<string>("value");
             // assert
             result.Should().Be("newValue");
         }
@@ -54,7 +54,7 @@ namespace Bumbershoot.Utilities.Tests.Cache
             // arrange
             Setup();
             // action
-            var result = _inMemoryCache.Get("value", () => { return "newValue"; });
+            var result = _inMemoryCache.GetOrSet("value", () => { return "newValue"; });
             // assert
             result.Should().Be("newValue");
         }
@@ -82,6 +82,36 @@ namespace Bumbershoot.Utilities.Tests.Cache
             // assert
             result1.Should().Be("one");
             result2.Should().Be("one"); // because value is already in the cache
+        }
+
+
+        [Test]
+        public void Reset_WhenWithNoSet_ShouldJustRemoveOneValue()
+        {
+            // arrange
+            Setup();
+            // action
+            var result1 = _inMemoryCache.GetOrSet("value", () => "one");
+             _inMemoryCache.Reset("value");
+            var result2 = _inMemoryCache.GetOrSet("value", () => "two");
+            // assert
+            result1.Should().Be("one");
+            result2.Should().Be("two"); // because value is already in the cache
+        }
+
+
+        [Test]
+        public void Reset_WhenCalledForAll_ShouldRemoveAllValues()
+        {
+            // arrange
+            Setup();
+            // action
+            var result1 = _inMemoryCache.GetOrSet("value", () => "one");
+            _inMemoryCache.Reset();
+            var result2 = _inMemoryCache.GetOrSet("value", () => "two");
+            // assert
+            result1.Should().Be("one");
+            result2.Should().Be("two"); // because value is already in the cache
         }
     }
 }
