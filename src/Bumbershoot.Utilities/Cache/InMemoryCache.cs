@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache
@@ -18,19 +19,6 @@ namespace Bumbershoot.Utilities.Cache
         }
 
         #region ISimpleObjectCache Members
-
-        public TValue Get<TValue>(string key, Func<TValue> getValue) where TValue : class
-        {
-            var retrievedValue = Get<TValue>(key);
-            if (retrievedValue == null)
-            {
-                var result = getValue();
-                if (result != null) Set(key, result);
-                return result;
-            }
-
-            return retrievedValue;
-        }
 
         public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
         {
@@ -55,7 +43,13 @@ namespace Bumbershoot.Utilities.Cache
             return Set(value, func());
         }
 
-        public TValue Get<TValue>(string key) where TValue : class
+        public void Reset(string? value = null)
+        {
+            if (value == null) _objectCache.Clear();
+            else _objectCache.Remove(value!, out var _);
+        }
+
+        public TValue? Get<TValue>(string key) where TValue : class
         {
             if (_objectCache.TryGetValue(key, out var values))
                 if (!values.IsExpired)
