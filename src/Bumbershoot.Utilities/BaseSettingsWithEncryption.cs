@@ -6,29 +6,34 @@ namespace Bumbershoot.Utilities;
 
 public class BaseSettingsWithEncryption : BaseSettings
 {
-    public static string Prefix => "EN|";
-    private readonly string _key;
+    private readonly Lazy<string> _key;
     private readonly ISimpleEncryption _encryption;
+    public string Prefix { get; }
 
-    public BaseSettingsWithEncryption(IConfiguration configuration, string configGroup, string keyGroup = "EncyptionKey", ISimpleEncryption? encryption = null) : base(configuration, configGroup)
+    public BaseSettingsWithEncryption(IConfiguration configuration, string configGroup, string keyGroup = "EncryptionKey", ISimpleEncryption? encryption = null , string prefix = "EN|") : base(configuration, configGroup)
     {
-        _key = configuration[keyGroup] ?? throw new ArgumentException($"Config required the {keyGroup} to be set.");
+        Prefix = prefix;
+        _key = new Lazy<string>(() =>
+            configuration[keyGroup] ?? throw new ArgumentException($"Config required the {keyGroup} to be set."));
+        
         _encryption = encryption?? new SimpleAes();
     }
 
-    #region Overrides of BaseSettings
+    public string GetEncryptedValue(string test)
+    {
+        return Prefix+_encryption.Encrypt(_key.Value, test);
+    }
+    
 
     protected override string ReadConfigValue(string key, string defaultValue)
     {
         var readConfigValue = base.ReadConfigValue(key, defaultValue);
         if (readConfigValue.StartsWith(Prefix))
         {
-            return _encryption.Decrypt(_key, readConfigValue.Substring(3, readConfigValue.Length - 3));
+            return _encryption.Decrypt(_key.Value, readConfigValue.Substring(Prefix.Length, readConfigValue.Length - Prefix.Length));
         }
         return readConfigValue;
     }
-
-    #endregion
-
+    
     
 }

@@ -11,7 +11,7 @@ public class BaseSettingsWithEncryptionTests
     private SettingsBTests _settings;
 
     [Test]
-    public void method_GiventestingFor_Shouldresult()
+    public void Encrypted_GivenValidKeys_ShouldResultInUnEncryptedKey()
     {
         // arrange
         Setup();
@@ -20,10 +20,20 @@ public class BaseSettingsWithEncryptionTests
         // assert
     }
 
+    [Test]
+    public void GetEncryptedValue_GivenString_ShouldReadEncryptedValue()
+    {
+        // arrange
+        Setup();
+        // action
+        _settings.GetEncryptedValue("test").Should().StartWith(_settings.Prefix);
+        // assert
+    }
+
     private void Setup()
     {
         var value = "enc";
-        var encrypt = BaseSettingsWithEncryption.Prefix + new SimpleAes().Encrypt(value, "hello");
+        var encrypt = "EN|" + new SimpleAes().Encrypt(value, "hello");
         var keyValuePairs = new Dictionary<string, string>()
         {
             { "key", value },
@@ -41,5 +51,7 @@ public class BaseSettingsWithEncryptionTests
         }
 
         public string Encrypted => ReadConfigValue("Encrypted", "???");
+
+        
     }
 }
