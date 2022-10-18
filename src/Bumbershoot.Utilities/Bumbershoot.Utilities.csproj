@@ -18,6 +18,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Encryption\" />
+	  <Folder Include="Monad\" />
 	</ItemGroup>
 
 </Project>
