@@ -33,12 +33,12 @@ public class TimerHelperTests
     }
 
     
-    [TestCase(200, "200ms")]
+    [TestCase(200.2, "200ms")]
     [TestCase(1201, "1.2s")]
     [TestCase(65201, "1.1m")]
     [TestCase(35365201, "9.8h")]
     [TestCase(353652011, "4.1d")]
-    public void ShortTime_GivenValidValue_ShouldReturnShortString(long milliSeconds,string expected)
+    public void ShortTime_GivenValidValue_ShouldReturnShortString(double milliSeconds,string expected)
     {
         // action
         var shortTime = TimeSpan.FromMilliseconds(milliSeconds).ShortTime();

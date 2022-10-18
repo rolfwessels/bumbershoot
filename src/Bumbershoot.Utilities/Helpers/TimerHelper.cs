@@ -30,7 +30,7 @@ namespace Bumbershoot.Utilities.Helpers
             if (build.TotalHours >= 1) return $"{Math.Round(build.TotalHours, 1)}h";
             if (build.TotalMinutes >= 1) return $"{Math.Round(build.TotalMinutes, 1)}m";
             if (build.TotalMilliseconds >= 1000) return $"{Math.Round(build.TotalSeconds,1)}s";
-            return $"{build.TotalMilliseconds}ms";
+            return $"{Math.Round(build.TotalMilliseconds)}ms";
         }
 
         public static void Retry<T>(this Action action, int count = 3, int retryDelay = 100, Action<T, int> callBack = null) where T : Exception
