@@ -51,7 +51,7 @@ namespace Bumbershoot.Utilities.Tests.Helpers
             // action
             var stringJoin = values.StringJoin("-");
             // assert
-            stringJoin.Should().Be(null);
+            stringJoin.Should().Be("");
         }
 
         [Test]

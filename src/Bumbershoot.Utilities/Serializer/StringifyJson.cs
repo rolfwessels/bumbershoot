@@ -29,7 +29,7 @@ namespace Bumbershoot.Utilities.Serializer
 
         public T Deserialize<T>(string value)
         {
-            return JsonSerializer.Deserialize<T>(value, _setting);
+            return JsonSerializer.Deserialize<T>(value, _setting)!;
         }
 
         public object Deserialize(Type type, ReadOnlyMemory<byte> value)
@@ -39,7 +39,7 @@ namespace Bumbershoot.Utilities.Serializer
 
         public object Deserialize(Type type, string value)
         {
-            return JsonSerializer.Deserialize(value, type, _setting);
+            return JsonSerializer.Deserialize(value, type, _setting)!;
         }
 
         public ReadOnlyMemory<byte> SerializeToUtf8Bytes<T>(T value)

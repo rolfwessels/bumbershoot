@@ -9,7 +9,7 @@ namespace Bumbershoot.Utilities.Helpers
     {
         public static Type FindOfType(Assembly ns, string typeName)
         {
-            return ns.GetTypes().FirstOrDefault(x => x.Name == typeName);
+            return ns.GetTypes().First(x => x.Name == typeName);
         }
 
 

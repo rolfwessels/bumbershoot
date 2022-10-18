@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Bumbershoot.Utilities.Helpers;
 using FluentAssertions;
 using NUnit.Framework;
@@ -13,7 +14,7 @@ namespace Bumbershoot.Utilities.Tests.Helpers
             // arrange
             var value = "value";
             // action
-            var dump = value.Dump();
+            var dump = (string)JsonSerializer.Serialize<object>(value, new JsonSerializerOptions { WriteIndented = true });
             // assert
             dump.Should().Be("\"value\"");
         }
