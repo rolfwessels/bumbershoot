@@ -98,7 +98,7 @@ namespace Bumbershoot.Utilities.Cache
 
             public bool IsExpired => DateTime.Now > _expire;
 
-            internal TValue AsValue<TValue>() where TValue : class
+            internal TValue? AsValue<TValue>() where TValue : class
             {
                 return _value as TValue;
             }

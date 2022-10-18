@@ -70,7 +70,7 @@ public class Output : Output<bool>
 {
     public static Output<bool> Ok()
     {
-        return new Output.Success(true);
+        return new Success(true);
     }
 
     public static Output<T> Ok<T>(T value)
@@ -81,10 +81,10 @@ public class Output : Output<bool>
     public static Output<T> Failure<T>(string message)
     {
         var exception = new Exception(message);
-        return Failed<T>(exception);
+        return Failure<T>(exception);
     }
 
-    private static Output<T> Failed<T>(Exception exception)
+    private static Output<T> Failure<T>(Exception exception)
     {
         return new Output<T>.Failed(exception);
     }

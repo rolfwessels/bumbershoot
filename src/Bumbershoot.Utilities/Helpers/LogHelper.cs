@@ -5,20 +5,10 @@ namespace Bumbershoot.Utilities.Helpers
 {
     public static class LogHelper
     {
-        public static string Dump(this object val)
+        public static T Dump<T>(this T val, string description="")
         {
-            return Dump(val, true);
-        }
-
-        public static string Dump(this object val, bool indented)
-        {
-
-            return JsonSerializer.Serialize(val, new JsonSerializerOptions { WriteIndented = indented });
-        }
-
-        public static T Dump<T>(this T val, string description)
-        {
-            Console.Out.WriteLine(description + ":" + val.Dump());
+            var prefix = string.IsNullOrEmpty(description)?"":(description + ":");
+            Console.Out.WriteLine(prefix + JsonSerializer.Serialize<object>(val, new JsonSerializerOptions { WriteIndented = true }));
             return val;
         }
     }

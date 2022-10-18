@@ -9,18 +9,18 @@ namespace Bumbershoot.Utilities.Helpers
 {
     public static class EnumerableHelper
     {
-        public static string StringJoin(this IEnumerable<object> values, string separator = ", ")
+        public static string StringJoin(this IEnumerable<object>? values, string separator = ", ")
         {
-            if (values == null) return null;
+            if (values == null) return "";
             var array = values.Select(x => x.ToString()).ToArray();
             return Join(separator, array);
         }
 
 
-        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> values, Action<T> call)
+        public static IEnumerable<T> ForEach<T>(this IEnumerable<T>? values, Action<T> call)
         {
-            if (values == null) return null;
-            foreach (var value in values) call(value);
+            if (values == null) return Array.Empty<T>();
+            foreach (var value in values!) call(value);
             return values;
         }
 

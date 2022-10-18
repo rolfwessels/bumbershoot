@@ -50,7 +50,7 @@ namespace Bumbershoot.Utilities.Helpers
             return value + postFix;
         }
 
-        public static string Mask(this string key, int length, string mask = "XXXX")
+        public static string? Mask(this string? key, int length, string mask = "XXXX")
         {
             if (key == null) return key;
             return key.Substring(0, Math.Min(key.Length, length)) + mask;

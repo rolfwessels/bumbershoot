@@ -33,7 +33,7 @@ namespace Bumbershoot.Utilities.Helpers
             return $"{Math.Round(build.TotalMilliseconds)}ms";
         }
 
-        public static void Retry<T>(this Action action, int count = 3, int retryDelay = 100, Action<T, int> callBack = null) where T : Exception
+        public static void Retry<T>(this Action action, int count = 3, int retryDelay = 100, Action<T, int>? callBack = null) where T : Exception
         {
             Task Action()
             {
@@ -42,7 +42,7 @@ namespace Bumbershoot.Utilities.Helpers
             RetryAsync(Action, count, retryDelay, callBack).Wait();
         }
 
-        public static async Task RetryAsync<T>(this Func<Task> action, int count = 3, int retryDelay = 100 , Action<T,int> callBack = null) where T : Exception
+        public static async Task RetryAsync<T>(this Func<Task> action, int count = 3, int retryDelay = 100 , Action<T,int>? callBack = null) where T : Exception
         {
             for (var tries = 0; tries < count; tries++)
                 try
