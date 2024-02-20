@@ -27,7 +27,7 @@ namespace Bumbershoot.Utilities.Helpers
 
         public static string[] GetEmailAddresses(this string to)
         {
-            if (string.IsNullOrEmpty(to)) return new string[0];
+            if (string.IsNullOrEmpty(to)) return Array.Empty<string>();
             return to.Split(';', ',', ' ').Where(x => x.Contains("@")).ToArray();
         }
 
