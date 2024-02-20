@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,11 +27,11 @@ namespace Bumbershoot.Utilities.Helpers
 
         public static string ShortTime(this TimeSpan build)
         {
-            if (build.TotalDays >= 1) return $"{Math.Round(build.TotalDays, 1)}d";
-            if (build.TotalHours >= 1) return $"{Math.Round(build.TotalHours, 1)}h";
-            if (build.TotalMinutes >= 1) return $"{Math.Round(build.TotalMinutes, 1)}m";
-            if (build.TotalMilliseconds >= 1000) return $"{Math.Round(build.TotalSeconds,1)}s";
-            return $"{Math.Round(build.TotalMilliseconds)}ms";
+            if (build.TotalDays >= 1) return $"{Math.Round(build.TotalDays, 1).ToString(CultureInfo.InvariantCulture)}d";
+            if (build.TotalHours >= 1) return $"{Math.Round(build.TotalHours, 1).ToString(CultureInfo.InvariantCulture)}h";
+            if (build.TotalMinutes >= 1) return $"{Math.Round(build.TotalMinutes, 1).ToString(CultureInfo.InvariantCulture)}m";
+            if (build.TotalMilliseconds >= 1000) return $"{Math.Round(build.TotalSeconds,1).ToString(CultureInfo.InvariantCulture)}s";
+            return $"{Math.Round(build.TotalMilliseconds).ToString(CultureInfo.InvariantCulture)}ms";
         }
 
         public static void Retry<T>(this Action action, int count = 3, int retryDelay = 100, Action<T, int>? callBack = null) where T : Exception

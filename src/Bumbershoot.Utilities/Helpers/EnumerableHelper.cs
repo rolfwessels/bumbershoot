@@ -9,29 +9,40 @@ namespace Bumbershoot.Utilities.Helpers
 {
     public static class EnumerableHelper
     {
-        public static string StringJoin(this IEnumerable<object>? values, string separator = ", ")
+        public static string StringJoin(this IEnumerable<object?>? values, string separator = ", ")
         {
-            if (values == null) return "";
-            var array = values.Select(x => x.ToString()).ToArray();
+            var array = values.OrEmpty().Select(x => x?.ToString()??"null").ToArray();
             return Join(separator, array);
         }
 
-
         public static IEnumerable<T> ForEach<T>(this IEnumerable<T>? values, Action<T> call)
         {
-            if (values == null) return Array.Empty<T>();
-            foreach (var value in values!) call(value);
-            return values;
+            var forEach = values.OrEmpty();
+            var list = new List<T>();   
+            foreach (var value in forEach)
+            {
+                call(value);
+                list.Add(value);
+            }
+            return list;
         }
 
-        public static object LookupValidValue<T>(this IEnumerable<T> values, string call)
+        public static T? LookupValidValue<T>(this IEnumerable<T> values, string call)
         {
             if (call == null) throw new ArgumentNullException(nameof(call));
-            var valueTuples = values.Select(x => new Tuple<T, string>(x, x.ToString())).ToArray();
-            var firstOrDefault = valueTuples.FirstOrDefault(x =>
-                String.Equals(x.Item2, call, StringComparison.CurrentCultureIgnoreCase));
-            if (firstOrDefault != null) return firstOrDefault.Item1;
-            return null;
+            var valueTuples = values.Select(x => new Tuple<T, string>(x, x?.ToString()??"")).ToArray();
+            var firstOrDefault = valueTuples.FirstOrDefault(x => string.Equals(x.Item2, call, StringComparison.CurrentCultureIgnoreCase));
+            return firstOrDefault != null ? firstOrDefault.Item1 : default;
+        }
+
+        public static string OrEmpty(this string? value)
+        {
+            return value ?? string.Empty;
+        }
+
+        public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T>? value)
+        {
+            return value ?? Array.Empty<T>();
         }
 
         public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this Task<List<T>> task)

@@ -26,7 +26,8 @@ jobs:
     env:
       RedisHost: localhost
     steps:
-      - uses: actions/checkout@v2        with:
+      - uses: actions/checkout@v2
+        with:
           fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v1

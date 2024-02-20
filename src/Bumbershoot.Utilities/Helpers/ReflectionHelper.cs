@@ -5,11 +5,11 @@ using System.Reflection;
 
 namespace Bumbershoot.Utilities.Helpers
 {
-    public class ReflectionHelper
+    public static class ReflectionHelper
     {
-        public static Type FindOfType(Assembly ns, string typeName)
+        public static Type? FindOfType(this Assembly ns, string typeName)
         {
-            return ns.GetTypes().First(x => x.Name == typeName);
+            return ns.GetTypes().FirstOrDefault(x => x.Name == typeName);
         }
 
 
@@ -43,7 +43,7 @@ namespace Bumbershoot.Utilities.Helpers
 
             return name;
         }
-
+        
         public static void ExpressionToAssign<TObj, TValue>(TObj obj, Expression<Func<TObj, TValue>> expression,
             TValue value)
         {

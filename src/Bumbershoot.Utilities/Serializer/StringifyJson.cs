@@ -15,12 +15,7 @@ namespace Bumbershoot.Utilities.Serializer
 
     public class StringifyJson : IStringify
     {
-        private readonly JsonSerializerOptions _setting;
-
-        public StringifyJson()
-        {
-            _setting = new JsonSerializerOptions { WriteIndented = false };
-        }
+        private readonly JsonSerializerOptions _setting = new() { WriteIndented = false };
 
         public string Serialize<T>(T value)
         {

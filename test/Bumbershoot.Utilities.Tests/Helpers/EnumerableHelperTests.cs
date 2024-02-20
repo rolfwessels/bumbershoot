@@ -16,9 +16,10 @@ namespace Bumbershoot.Utilities.Tests.Helpers
             var ints = new[] { 1, 23, 4, 5, 7, 8, 5678, 809, 790 };
             var counter = 0;
             // action
-            var stringJoin = ints.ForEach(i => counter++);
+            var each = ints.ForEach(i => counter++);
             // assert
-            ints.Count().Should().Be(counter);
+            ints.Length.Should().Be(counter);
+            each.ToArray().Length.Should().Be(ints.Length);
         }
 
         [Test]
@@ -47,11 +48,11 @@ namespace Bumbershoot.Utilities.Tests.Helpers
         public void StringJoin_WhenCalledWithOneNull_ShouldReturnNull()
         {
             // arrange
-            var values = null as IEnumerable<object>;
+            var values = new string[] {"test",null};
             // action
             var stringJoin = values.StringJoin("-");
             // assert
-            stringJoin.Should().Be("");
+            stringJoin.Should().Be("test-null");
         }
 
         [Test]

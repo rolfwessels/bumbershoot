@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Bumbershoot.Utilities.Cache;
 using FluentAssertions;
 using NUnit.Framework;
@@ -8,7 +9,7 @@ namespace Bumbershoot.Utilities.Tests.Cache
     [TestFixture]
     public class InMemoryCacheTests
     {
-        private ISimpleObjectCache _inMemoryCache;
+        private InMemoryCache _inMemoryCache;
 
         #region Setup/Teardown
 
@@ -25,6 +26,53 @@ namespace Bumbershoot.Utilities.Tests.Cache
         #endregion
 
         [Test]
+        [TestCase("InMemoryCache")]
+        [TestCase("FileCache")]
+        public async Task GetOrSet_WhenWhenTimesOut_ShouldUseNewValue(string type)
+        {
+            // arrange
+            var defaultCacheTime = TimeSpan.FromMilliseconds(100);
+            var key = "value";
+            ISimpleObjectCache cache = type switch
+            {
+                "InMemoryCache" => new InMemoryCache(defaultCacheTime),
+                "FileCache" => new FileCache(defaultCacheTime,"tst"),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            var called = 0;
+            var value = async () =>
+            {
+                called++;
+                await Task.Delay(10);
+                return "one";
+            };
+            // action
+            cache.Reset();
+            
+            var result2 = cache.GetOrSetAsync(key, value);
+            var resultAgain = cache.GetOrSetAsync(key, value);
+            var result1 = cache.GetAndResetAsync(key, value);
+            await Task.WhenAll(result1,resultAgain, result2);
+            var getResultBefore = cache.GetAsync<string>(key);
+            await Task.Delay(defaultCacheTime+defaultCacheTime);
+            var getResult = cache.Get<string>(key);
+            await Task.Delay(defaultCacheTime);
+            var reset = cache.Reset(key);
+            var result3 = cache.GetOrSet(key, () => "two");
+            
+            // assert
+            called.Should().Be(1);
+            getResultBefore.Result.Should().Be("one");
+            resultAgain.Result.Should().Be("one");
+            getResult.Should().Be(null);
+            reset.Should().BeFalse();
+            result1.Result.Should().Be("one");
+            result1.Result.Should().Be("one");
+            result2.Result.Should().Be("one"); 
+            result3.Should().Be("two"); 
+        }
+
+        [Test]
         public void Get_WhenCacheDoesExist_ShouldNotGetValue()
         {
             // arrange
@@ -35,9 +83,10 @@ namespace Bumbershoot.Utilities.Tests.Cache
             // assert
             result.Should().Be("newValue");
         }
+        
 
         [Test]
-        public void Get_WhenCacheDoesExistShoudOnlyDoItOnce_ShouldNotGetValue()
+        public void Get_WhenCacheDoesExistShouldOnlyDoItOnce_ShouldNotGetValue()
         {
             // arrange
             Setup();
@@ -114,4 +163,6 @@ namespace Bumbershoot.Utilities.Tests.Cache
             result2.Should().Be("two"); // because value is already in the cache
         }
     }
+
+   
 }

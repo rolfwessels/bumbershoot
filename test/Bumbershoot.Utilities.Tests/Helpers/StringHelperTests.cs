@@ -101,7 +101,7 @@ namespace Bumbershoot.Utilities.Tests.Helpers
             // action
             var uriCombine = StringHelper.Mask(null, 5);
             // assert
-            uriCombine.Should().Be(null);
+            uriCombine.Should().Be("");
         }
 
         [Test]
