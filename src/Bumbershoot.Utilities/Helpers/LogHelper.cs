@@ -12,13 +12,12 @@ namespace Bumbershoot.Utilities.Helpers
 
         public static string Dump(this object val, bool indented)
         {
-
             return JsonSerializer.Serialize(val, new JsonSerializerOptions { WriteIndented = indented });
         }
 
         public static T Dump<T>(this T val, string description)
         {
-            Console.Out.WriteLine(description + ":" + val.Dump());
+            Console.Out.WriteLine(description + ":" + val?.Dump());
             return val;
         }
     }

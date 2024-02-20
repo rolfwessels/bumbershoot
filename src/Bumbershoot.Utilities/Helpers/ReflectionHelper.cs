@@ -7,7 +7,7 @@ namespace Bumbershoot.Utilities.Helpers
 {
     public class ReflectionHelper
     {
-        public static Type FindOfType(Assembly ns, string typeName)
+        public static Type? FindOfType(Assembly ns, string typeName)
         {
             return ns.GetTypes().FirstOrDefault(x => x.Name == typeName);
         }

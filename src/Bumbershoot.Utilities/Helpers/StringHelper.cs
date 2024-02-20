@@ -50,19 +50,19 @@ namespace Bumbershoot.Utilities.Helpers
             return value + postFix;
         }
 
-        public static string Mask(this string key, int length, string mask = "XXXX")
+        public static string Mask(this string? key, int length, string mask = "XXXX")
         {
-            if (key == null) return key;
+            if (key == null) return "";
             return key.Substring(0, Math.Min(key.Length, length)) + mask;
         }
 
-        public static string Base64Decode(this string base64EncodedData)
+        public static string? Base64Decode(this string? base64EncodedData)
         {
             if (base64EncodedData == null) return null;
             return Convert.FromBase64String(base64EncodedData).AsUtf8String();
         }
 
-        public static string Base64Encode(this string plainText)
+        public static string? Base64Encode(this string? plainText)
         {
             if (plainText == null) return null;
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
@@ -74,9 +74,6 @@ namespace Bumbershoot.Utilities.Helpers
             return Convert.ToBase64String(plainTextBytes);
         }
 
-        public static string OrEmpty(this string value)
-        {
-            return value ?? string.Empty;
-        }
+        
     }
 }

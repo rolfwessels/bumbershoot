@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache;
@@ -22,7 +23,12 @@ public class InMemoryCache : ISimpleObjectCache
     {
         if (_objectCache.TryGetValue(key, out var values))
             if (!values.IsExpired)
-                return values.AsValue<TValue>();
+            {
+                var asValue = values.AsValue<TValue>();
+                if (asValue != null)
+                    return asValue;
+            }
+
         var andReset = Set(key, getValue());
         StartCleanup();
         return andReset;
@@ -30,7 +36,7 @@ public class InMemoryCache : ISimpleObjectCache
 
     public Task<TValue> GetAndResetAsync<TValue>(string key, Func<Task<TValue>> getValue)
     {
-        return GetOrSetAsync(key, getValue);
+        return GetAndReset(key, getValue);
     }
 
 
@@ -41,7 +47,7 @@ public class InMemoryCache : ISimpleObjectCache
         if (cacheHolder.IsExpired)
             StartCleanup();
         else
-            return cacheHolder.AsValue<Task<T>>();
+            return cacheHolder.AsValue<Task<T>>()!;
         return Set(key, getValue());
     }
 
@@ -49,25 +55,26 @@ public class InMemoryCache : ISimpleObjectCache
     public T GetOrSet<T>(string value, Func<T> func) where T : class
     {
         var cacheHolder =
-            _objectCache.GetOrAdd(value, s => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
+            _objectCache.GetOrAdd(value, _ => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
         if (cacheHolder.IsExpired)
             StartCleanup();
         else
-            return cacheHolder.AsValue<T>();
+            return cacheHolder.AsValue<T>()!;
         return Set(value, func());
     }
 
     public TValue Set<TValue>(string key, TValue value)
     {
+        Debug.Assert(value != null, nameof(value) + " != null");
         var cacheHolder = new CacheHolder(value, DateTime.Now.Add(_defaultCacheTime));
-        _objectCache.AddOrUpdate(key, s => cacheHolder, (s, holder) => cacheHolder);
+        _objectCache.AddOrUpdate(key, _ => cacheHolder, (_, _) => cacheHolder);
         return value;
     }
 
     public bool Reset(string? value = null)
     {
         if (value != null)
-            return _objectCache.Remove(value!, out _);
+            return _objectCache.Remove(value, out _);
         _objectCache.Clear();
         return true;
     }
@@ -79,7 +86,7 @@ public class InMemoryCache : ISimpleObjectCache
 
     public Task<T> GetOrSet<T>(string value, Func<Task<T>> getValue) where T : class
     {
-        return GetOrSetAsync<T>(value, getValue);
+        return GetOrSetAsync(value, getValue);
     }
 
     public TValue? Get<TValue>(string key) where TValue : class
@@ -123,7 +130,7 @@ public class InMemoryCache : ISimpleObjectCache
 
         public bool IsExpired => DateTime.Now > _expire;
 
-        internal TValue AsValue<TValue>() where TValue : class
+        internal TValue? AsValue<TValue>() where TValue : class
         {
             return _value as TValue;
         }

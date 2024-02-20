@@ -15,12 +15,7 @@ namespace Bumbershoot.Utilities.Serializer
 
     public class StringifyJson : IStringify
     {
-        private readonly JsonSerializerOptions _setting;
-
-        public StringifyJson()
-        {
-            _setting = new JsonSerializerOptions { WriteIndented = false };
-        }
+        private readonly JsonSerializerOptions _setting = new() { WriteIndented = false };
 
         public string Serialize<T>(T value)
         {
@@ -29,7 +24,7 @@ namespace Bumbershoot.Utilities.Serializer
 
         public T Deserialize<T>(string value)
         {
-            return JsonSerializer.Deserialize<T>(value, _setting);
+            return JsonSerializer.Deserialize<T>(value, _setting)!;
         }
 
         public object Deserialize(Type type, ReadOnlyMemory<byte> value)
@@ -39,7 +34,7 @@ namespace Bumbershoot.Utilities.Serializer
 
         public object Deserialize(Type type, string value)
         {
-            return JsonSerializer.Deserialize(value, type, _setting);
+            return JsonSerializer.Deserialize(value, type, _setting)!;
         }
 
         public ReadOnlyMemory<byte> SerializeToUtf8Bytes<T>(T value)

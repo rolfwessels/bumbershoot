@@ -13,7 +13,7 @@ namespace Bumbershoot.Utilities.Helpers
             {
                 if (stream == null)
                     throw new ArgumentException(
-                        $"{resourceName} resource does not exist in {getExecutingAssembly.FullName.Split(',').First()} assembly.");
+                        $"{resourceName} resource does not exist in {getExecutingAssembly.FullName.OrEmpty().Split(',').First()} assembly.");
                 return stream.ReadToString();
             }
         }

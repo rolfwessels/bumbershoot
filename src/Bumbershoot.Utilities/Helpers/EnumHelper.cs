@@ -14,7 +14,7 @@ namespace Bumbershoot.Utilities.Helpers
         public static IEnumerable<string> Values<T>()
         {
             var values = Enum.GetValues(typeof(T));
-            foreach (var value in values) yield return value.ToString();
+            foreach (var value in values) yield return value.ToString()??"";
         }
     }
 }

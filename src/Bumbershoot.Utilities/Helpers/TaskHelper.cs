@@ -19,5 +19,12 @@ namespace Bumbershoot.Utilities.Helpers
                 if (x.Exception != null) log?.Invoke($"Failed to run async method:{x.Exception.Message}", x.Exception);
             });
         }
+
+        public static async Task<T> OrFail<T>(this Task<T?> lookup)
+        {
+            var found = await lookup;
+            if  (found == null) throw new Exception($"Failed to find {typeof(T).Name}.");
+            return found;
+        }
     }
 }
