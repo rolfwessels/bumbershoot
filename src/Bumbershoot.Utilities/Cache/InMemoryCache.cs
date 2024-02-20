@@ -3,109 +3,129 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Bumbershoot.Utilities.Cache
+namespace Bumbershoot.Utilities.Cache;
+
+public class InMemoryCache : ISimpleObjectCache
 {
-    public class InMemoryCache : ISimpleObjectCache
+    private readonly TimeSpan _defaultCacheTime;
+    private readonly ConcurrentDictionary<string, CacheHolder> _objectCache;
+    private DateTime _nextExpiry;
+
+    public InMemoryCache(TimeSpan defaultCacheTime)
     {
-        private readonly TimeSpan _defaultCacheTime;
-        private readonly ConcurrentDictionary<string, CacheHolder> _objectCache;
-        private DateTime _nextExpiry;
+        _defaultCacheTime = defaultCacheTime;
+        _objectCache = new ConcurrentDictionary<string, CacheHolder>();
+        _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
+    }
 
-        public InMemoryCache(TimeSpan defaultCacheTime)
-        {
-            _defaultCacheTime = defaultCacheTime;
-            _objectCache = new ConcurrentDictionary<string, CacheHolder>();
-            _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
-        }
+    public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
+    {
+        if (_objectCache.TryGetValue(key, out var values))
+            if (!values.IsExpired)
+                return values.AsValue<TValue>();
+        var andReset = Set(key, getValue());
+        StartCleanup();
+        return andReset;
+    }
 
-        #region ISimpleObjectCache Members
+    public Task<TValue> GetAndResetAsync<TValue>(string key, Func<Task<TValue>> getValue)
+    {
+        return GetOrSetAsync(key, getValue);
+    }
 
-        public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
-        {
-            if (_objectCache.TryGetValue(key, out var values))
-                if (!values.IsExpired)
-                    return values.AsValue<TValue>();
-            return Set(key, getValue());
-        }
 
-        public TValue Set<TValue>(string key, TValue value)
-        {
-            var cacheHolder = new CacheHolder(value, DateTimeOffset.Now.Add(_defaultCacheTime));
-            _objectCache.AddOrUpdate(key, s => cacheHolder, (s, holder) => cacheHolder);
-            return value;
-        }
+    public Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> getValue)
+    {
+        var cacheHolder =
+            _objectCache.GetOrAdd(key, _ => new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime)));
+        if (cacheHolder.IsExpired)
+            StartCleanup();
+        else
+            return cacheHolder.AsValue<Task<T>>();
+        return Set(key, getValue());
+    }
 
-        public T GetOrSet<T>(string value, Func<T> func) where T : class
-        {
-            var cacheHolder = _objectCache.GetOrAdd(value, s => new CacheHolder(func(), DateTimeOffset.Now.Add(_defaultCacheTime)));
-            if (!cacheHolder.IsExpired)
-                return cacheHolder.AsValue<T>();
-            return Set(value, func());
-        }
 
-        public void Reset(string? value = null)
-        {
-            if (value == null) _objectCache.Clear();
-            else _objectCache.Remove(value!, out var _);
-        }
+    public T GetOrSet<T>(string value, Func<T> func) where T : class
+    {
+        var cacheHolder =
+            _objectCache.GetOrAdd(value, s => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
+        if (cacheHolder.IsExpired)
+            StartCleanup();
+        else
+            return cacheHolder.AsValue<T>();
+        return Set(value, func());
+    }
 
-        public TValue? Get<TValue>(string key) where TValue : class
-        {
-            if (_objectCache.TryGetValue(key, out var values))
-                if (!values.IsExpired)
-                    return values.AsValue<TValue>();
-                else
-                    StartCleanup();
-            return null;
-        }
+    public TValue Set<TValue>(string key, TValue value)
+    {
+        var cacheHolder = new CacheHolder(value, DateTime.Now.Add(_defaultCacheTime));
+        _objectCache.AddOrUpdate(key, s => cacheHolder, (s, holder) => cacheHolder);
+        return value;
+    }
 
-        #endregion
+    public bool Reset(string? value = null)
+    {
+        if (value != null)
+            return _objectCache.Remove(value!, out _);
+        _objectCache.Clear();
+        return true;
+    }
 
-        #region Private Methods
+    public Task<TValue>? GetAsync<TValue>(string key)
+    {
+        return Get<Task<TValue>>(key);
+    }
 
-        private void StartCleanup()
-        {
-            if (DateTime.Now > _nextExpiry)
-                lock (_objectCache)
+    public Task<T> GetOrSet<T>(string value, Func<Task<T>> getValue) where T : class
+    {
+        return GetOrSetAsync<T>(value, getValue);
+    }
+
+    public TValue? Get<TValue>(string key) where TValue : class
+    {
+        if (_objectCache.TryGetValue(key, out var values))
+            if (!values.IsExpired)
+                return values.AsValue<TValue>();
+            else
+                StartCleanup();
+        return null;
+    }
+
+    private void StartCleanup()
+    {
+        if (DateTime.Now > _nextExpiry)
+            lock (_objectCache)
+            {
+                if (DateTime.Now > _nextExpiry)
                 {
-                    if (DateTime.Now > _nextExpiry)
+                    _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
+                    Task.Run(() =>
                     {
-                        _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
-                        Task.Run(() =>
-                        {
-                            foreach (var cacheHolder in _objectCache.ToArray())
-                                if (cacheHolder.Value.IsExpired)
-                                    _objectCache.TryRemove(cacheHolder.Key, out _);
-                        });
-                    }
+                        foreach (var cacheHolder in _objectCache.ToArray())
+                            if (cacheHolder.Value.IsExpired)
+                                _objectCache.TryRemove(cacheHolder.Key, out _);
+                    });
                 }
-        }
+            }
+    }
 
-        #endregion
+    private class CacheHolder
+    {
+        private readonly DateTime _expire;
+        private readonly object _value;
 
-        #region Nested type: CacheHolder
-
-        private class CacheHolder
+        public CacheHolder(object value, DateTime expire)
         {
-            private readonly DateTimeOffset _expire;
-            private readonly object _value;
-
-            public CacheHolder(object value, DateTimeOffset expire)
-            {
-                _value = value;
-                _expire = expire;
-            }
-
-            public bool IsExpired => DateTime.Now > _expire;
-
-            internal TValue AsValue<TValue>() where TValue : class
-            {
-                return _value as TValue;
-            }
+            _value = value;
+            _expire = expire;
         }
 
-        #endregion
+        public bool IsExpired => DateTime.Now > _expire;
 
-       
+        internal TValue AsValue<TValue>() where TValue : class
+        {
+            return _value as TValue;
+        }
     }
 }
