@@ -9,7 +9,8 @@ docker-warning := ""
 RED=\033[0;31m
 GREEN=\033[0;32m
 NC=\033[0m # No Color
-version := 1.1.$(shell git rev-list HEAD --count)
+versionPrefix := 1.1
+version := $(versionPrefix).$(shell git rev-list HEAD --count)
 
 dockerhub := rolfwessels/Bumbershoot
 
@@ -32,7 +33,7 @@ ifeq ($(current-branch), main)
 else ifeq ($(current-branch), develop)
 	version-tag := $(version)-beta
 else
-	version := 1.0.$(shell git rev-list origin/main --count).$(shell git rev-list origin/main..HEAD --count)
+	version := $(versionPrefix).$(shell git rev-list origin/main --count).$(shell git rev-list origin/main..HEAD --count)
 	version-tag := $(version)-alpha
 endif
 
