@@ -20,9 +20,10 @@ public class ConfigurationFactoryTests
     public void InformationalVersion_GivenCallingAssembly_ShouldReturnVersion()
     {
         // action
-        var informationalVersion = ConfigurationFactory.InformationalVersion();
+        var informationalVersion =
+            ConfigurationFactory.InformationalVersion(typeof(ConfigurationFactoryTests).Assembly);
         // assert
-        informationalVersion.Should().Be("0.0.8-alpha");
+        informationalVersion.Should().Be("0.0.1-tests");
     }
 
     [Test]

@@ -24,9 +24,9 @@ public static class ConfigurationFactory
         return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLower() ?? "local";
     }
 
-    public static string InformationalVersion()
+    public static string InformationalVersion(Assembly? assembly = null)
     {
-        var infoVersion = Assembly.GetExecutingAssembly()
+        var infoVersion = (assembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly())
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
         return $@"{infoVersion}";
