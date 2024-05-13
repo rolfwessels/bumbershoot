@@ -97,20 +97,24 @@ public class TaskHelperTests
     {
         // arrange
         var stopwatch = Stopwatch.StartNew();
-        var expected = 100;
-        var millisecondsDelay = 10;
+        var expected = 10;
+        var millisecondsDelay = 100;
         var ran = 0;
+        var concurrentRequests = 5;
         // action
-        var whenAllLimited = await Enumerable.Range(0, expected)
+        await Enumerable.Range(1, expected)
             .Select(async x =>
             {
                 ran++;
+                // Console.Out.WriteLine($"Before {x}");
                 await Task.Delay(millisecondsDelay);
+                // Console.Out.WriteLine($"After {x}");
                 return Thread.CurrentThread.ManagedThreadId;
-            }).WhenAllLimited(5);
+            }).WhenAllLimited(concurrentRequests);
 
         // assert
-        stopwatch.Elapsed.Milliseconds.Should().BeLessThan(expected * millisecondsDelay);
+        stopwatch.Elapsed.TotalMilliseconds
+            .Should().BeLessThan(millisecondsDelay * expected / 2d);
         ran.Should().Be(expected);
     }
 
@@ -147,5 +151,94 @@ public class TaskHelperTests
 
         // Assert
         results.Should().BeEquivalentTo(new List<int> { 1, 2, 3, 4, 5 });
+    }
+
+    [Test]
+    public void Retry_GivenValidValue_ShouldRetryXTimes()
+    {
+        var retries = 4;
+        // action
+        var counter = 0;
+
+
+        void Action()
+        {
+            counter++;
+            throw new ArgumentException();
+        }
+
+        var x = () => TaskHelper.Retry<ArgumentException>(Action, retries, 1);
+        // assert
+        x.Should().Throw<ArgumentException>();
+        counter.Should().Be(retries);
+    }
+
+    [Test]
+    public void RetryTryAsync_GivenValidValue_ShouldRetryXTimes()
+    {
+        var retries = 4;
+        // action
+        var counter = 0;
+
+        async Task Action()
+        {
+            counter++;
+            await Task.Delay(1);
+            throw new ArgumentException();
+        }
+
+        var tryAsync = () => TaskHelper.RetryAsync<ArgumentException>(Action, retries, 1).Wait();
+        // assert
+        tryAsync.Should().Throw<ArgumentException>();
+        counter.Should().Be(retries);
+    }
+
+    [Test]
+    public void RetryTryAsync_GivenValidValue_ShouldBackOff()
+    {
+        var retries = 4;
+        var backoff = new List<int>();
+
+        // action
+        async Task Call()
+        {
+            await Task.Delay(1);
+            throw new ArgumentException();
+        }
+
+        var tryAsync = () =>
+            TaskHelper.RetryAsync<ArgumentException>(Call, retries, 1, (_, i) => backoff.Add(i)).Wait();
+        // assert
+        tryAsync.Should().Throw<ArgumentException>();
+        backoff.Should().Contain(1);
+        backoff.Should().Contain(2);
+        backoff.Should().Contain(4);
+    }
+
+    [Test]
+    public async Task RetryTryAsync_GivenSample_ShouldOutput()
+    {
+        var retries = 4;
+        var retryDelay = 10;
+
+        // action
+        async Task CallToRetry()
+        {
+            await Task.Delay(1);
+            throw new ArgumentException();
+        }
+
+        void CallBack(ArgumentException _, int i) =>
+            Console.WriteLine($"WARN: Failed with '{_.Message}', will retry in {i}ms.");
+
+        try
+        {
+            await TaskHelper.RetryAsync<ArgumentException>(CallToRetry, retries, retryDelay, CallBack);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error: {e.Message}");
+        }
+        // assert
     }
 }

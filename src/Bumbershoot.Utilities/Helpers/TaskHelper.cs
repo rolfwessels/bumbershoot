@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,10 +47,44 @@ public static class TaskHelper
                 results.Add(x.Result);
                 return release;
             });
+
             running.Add(continuedTask);
         }
 
         await Task.WhenAll(running);
         return results.ToList();
+    }
+
+    public static void Retry<T>(this Action action,
+        int count = 3,
+        int retryDelay = 100,
+        Action<T, int>? callBack = null) where T : Exception
+    {
+        Task Action()
+        {
+            return Task.Run(action);
+        }
+
+        RetryAsync(Action, count, retryDelay, callBack).Wait();
+    }
+
+    public static async Task RetryAsync<T>(this Func<Task> action,
+        int count = 3,
+        int retryDelay = 100,
+        Action<T, int>? callBack = null) where T : Exception
+    {
+        for (var tries = 0; tries < count; tries++)
+            try
+            {
+                await action();
+                return;
+            }
+            catch (T e)
+            {
+                if (tries + 1 == count) throw;
+                callBack?.Invoke(e, retryDelay);
+                await Task.Delay(retryDelay);
+                retryDelay += retryDelay;
+            }
     }
 }

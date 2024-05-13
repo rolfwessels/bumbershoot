@@ -15,9 +15,7 @@ public static class TimerHelper
         do
         {
             result = o(updateModels);
-            if (millisecondsTimeout == 0)
-                millisecondsTimeout = 1;
-            else await Task.Delay((millisecondsTimeout += millisecondsTimeout).Dump());
+            await Task.Delay((millisecondsTimeout += millisecondsTimeout == 0 ? 1 : millisecondsTimeout).Dump());
         } while (!result && DateTime.Now < stopTime);
 
         return updateModels;
@@ -31,9 +29,7 @@ public static class TimerHelper
         do
         {
             result = o(updateModels);
-            if (millisecondsTimeout == 0)
-                millisecondsTimeout = 1;
-            else Thread.Sleep(millisecondsTimeout += millisecondsTimeout);
+            Thread.Sleep(millisecondsTimeout += millisecondsTimeout == 0 ? 1 : millisecondsTimeout);
         } while (!result && DateTime.Now < stopTime);
 
         return updateModels;
@@ -56,38 +52,5 @@ public static class TimerHelper
         if (build.TotalMilliseconds >= 1000)
             return $"{Math.Round(build.TotalSeconds, digits: 1).ToString(CultureInfo.InvariantCulture)}s";
         return $"{Math.Round(build.TotalMilliseconds).ToString(CultureInfo.InvariantCulture)}ms";
-    }
-
-    public static void Retry<T>(this Action action,
-        int count = 3,
-        int retryDelay = 100,
-        Action<T, int>? callBack = null) where T : Exception
-    {
-        Task Action()
-        {
-            return Task.Run(action);
-        }
-
-        RetryAsync(Action, count, retryDelay, callBack).Wait();
-    }
-
-    public static async Task RetryAsync<T>(this Func<Task> action,
-        int count = 3,
-        int retryDelay = 100,
-        Action<T, int>? callBack = null) where T : Exception
-    {
-        for (var tries = 0; tries < count; tries++)
-            try
-            {
-                await action();
-                return;
-            }
-            catch (T e)
-            {
-                if (tries + 1 == count) throw;
-                callBack?.Invoke(e, retryDelay);
-                await Task.Delay(retryDelay);
-                retryDelay += retryDelay;
-            }
     }
 }
