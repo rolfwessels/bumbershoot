@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using Bumbershoot.Utilities.Helpers;
 
 namespace Bumbershoot.Utilities.Encryption;
@@ -17,13 +15,14 @@ public class SimpleAes : ISimpleEncryption
         var rgbKey = GetValidKey(key);
         var iv = aesAlg.IV;
         var encrypt = aesAlg.CreateEncryptor(rgbKey, iv);
-        
+
         using var msEncrypt = new MemoryStream();
         using var csEncrypt = new CryptoStream(msEncrypt, encrypt, CryptoStreamMode.Write);
         using (var swEncrypt = new StreamWriter(csEncrypt))
         {
             swEncrypt.Write(decryptedValue);
         }
+
         return iv.Combine(msEncrypt.ToArray()).Base64String();
     }
 
