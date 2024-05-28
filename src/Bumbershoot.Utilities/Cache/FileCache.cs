@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -11,7 +12,7 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
 {
     private readonly string _path;
     private readonly TimeSpan _timeOut;
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _conCurrencyCheck = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _conCurrencyCheck = new();
 
     public FileCache(TimeSpan? fromMinutes = null, string prefix = "file_cache")
     {
@@ -109,6 +110,7 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
 
             var value = await getValue();
             Set(key, value);
+            _conCurrencyCheck.Remove(fileName, out _);
             return value;
         }
         finally
