@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache;
 
-public class InMemoryCache : ISimpleObjectCache
+public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
 {
     private readonly TimeSpan _defaultCacheTime;
     private readonly ConcurrentDictionary<string, CacheHolder> _objectCache;
@@ -52,15 +52,15 @@ public class InMemoryCache : ISimpleObjectCache
     }
 
 
-    public T GetOrSet<T>(string value, Func<T> func) where T : class
+    public T GetOrSet<T>(string key, Func<T> func) where T : class
     {
         var cacheHolder =
-            _objectCache.GetOrAdd(value, _ => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
+            _objectCache.GetOrAdd(key, _ => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
         if (cacheHolder.IsExpired)
             StartCleanup();
         else
             return cacheHolder.AsValue<T>()!;
-        return Set(value, func());
+        return Set(key, func());
     }
 
     public TValue Set<TValue>(string key, TValue value)
@@ -84,9 +84,9 @@ public class InMemoryCache : ISimpleObjectCache
         return Get<Task<TValue>>(key);
     }
 
-    public Task<T> GetOrSet<T>(string value, Func<Task<T>> getValue) where T : class
+    public Task<T> GetOrSet<T>(string key, Func<Task<T>> getValue) where T : class
     {
-        return GetOrSetAsync(value, getValue);
+        return GetOrSetAsync(key, getValue);
     }
 
     public TValue? Get<TValue>(string key) where TValue : class

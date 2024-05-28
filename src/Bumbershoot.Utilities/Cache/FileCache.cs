@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache;
 
-public class FileCache : ISimpleObjectCache
+public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
 {
     private readonly string _path;
     private readonly TimeSpan _timeOut;
@@ -21,7 +21,6 @@ public class FileCache : ISimpleObjectCache
             Directory.CreateDirectory(_path);
         }
 
-        
         _timeOut = fromMinutes ?? TimeSpan.FromMinutes(5);
     }
 
@@ -32,6 +31,7 @@ public class FileCache : ISimpleObjectCache
         {
             File.SetLastWriteTimeUtc(fileName, DateTime.UtcNow);
         }
+
         var found = Get<TValue>(key);
         return found ?? Set(key, getValue());
     }
@@ -43,6 +43,12 @@ public class FileCache : ISimpleObjectCache
         {
             File.SetLastWriteTimeUtc(fileName, DateTime.UtcNow);
         }
+
+        return GetOrSetAsync(key, getValue);
+    }
+
+    public Task<TValue> GetOrSet<TValue>(string key, Func<Task<TValue>> getValue) where TValue : class
+    {
         return GetOrSetAsync(key, getValue);
     }
 
@@ -56,7 +62,7 @@ public class FileCache : ISimpleObjectCache
 
     private string GetFileName(string key)
     {
-        return Path.Combine(_path, key.Replace(".","_").Replace(":","_"));
+        return Path.Combine(_path, key.Replace(".", "_").Replace(":", "_"));
     }
 
 
@@ -75,6 +81,7 @@ public class FileCache : ISimpleObjectCache
             {
                 return JsonSerializer.Deserialize<TValue>(File.ReadAllText(fileName));
             }
+
             File.Delete(fileName);
         }
 
@@ -88,8 +95,9 @@ public class FileCache : ISimpleObjectCache
         {
             return await found;
         }
+
         var fileName = GetFileName(key);
-        var semaphore = _conCurrencyCheck.GetOrAdd(fileName, new SemaphoreSlim(1,1));
+        var semaphore = _conCurrencyCheck.GetOrAdd(fileName, new SemaphoreSlim(1, 1));
         try
         {
             await semaphore.WaitAsync();
@@ -98,6 +106,7 @@ public class FileCache : ISimpleObjectCache
             {
                 return await found;
             }
+
             var value = await getValue();
             Set(key, value);
             return value;
@@ -124,21 +133,18 @@ public class FileCache : ISimpleObjectCache
                     return deserialize;
                 });
             }
+
             File.Delete(fileName);
         }
 
         return null;
     }
 
-    public Task<T> GetOrSet<T>(string value, Func<Task<T>> getValue) where T : class
-    {
-        return GetOrSetAsync(value, getValue);
-    }
 
-    public T GetOrSet<T>(string value, Func<T> getValue) where T : class
+    public T GetOrSet<T>(string key, Func<T> getValue) where T : class
     {
-        var found = Get<T>(value);
-        return found ?? Set(value, getValue());
+        var found = Get<T>(key);
+        return found ?? Set(key, getValue());
     }
 
     public bool Reset(string? value = null)
@@ -156,6 +162,7 @@ public class FileCache : ISimpleObjectCache
             File.Delete(fileName);
             return true;
         }
+
         return false;
     }
 }
