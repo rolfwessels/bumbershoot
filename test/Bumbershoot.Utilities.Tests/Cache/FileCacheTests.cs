@@ -8,15 +8,13 @@ namespace Bumbershoot.Utilities.Tests.Cache;
 public class FileCacheTests
 {
     [Test]
-    public void LetItPick_GiventestingFor_Shouldresult()
+    public void GetOrSet_GivenGivenRequest_ShouldTakeTheAsyncOverTheStandard()
     {
         // arrange
         var fileCache = new FileCache(TimeSpan.FromSeconds(10), "tst");
         // action
         fileCache.Reset();
-        var value = fileCache.GetOrSet("acasd",() => Task.FromResult("asd"));
+        var value = fileCache.GetOrSet("acasd", () => Task.FromResult("asd"));
         // assert
     }
-
-
 }

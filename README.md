@@ -72,7 +72,7 @@ async Task CallToRetry()
 void CallBack(ArgumentException _, int i) => Console.WriteLine($"WARN: Failed with '{_.Message}', will retry in {i}ms.");
 try
 {
-    await TimerHelper.RetryAsync<ArgumentException>(CallToRetry, retries, retryDelay, CallBack);
+    await TaskHelper.RetryAsync<ArgumentException>(CallToRetry, retries, retryDelay, CallBack);
 }
 catch (Exception e)
 {
