@@ -22,15 +22,21 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
     public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
     {
         if (_objectCache.TryGetValue(key, out var values))
+        {
             if (!values.IsExpired)
             {
                 var asValue = values.AsValue<TValue>();
                 if (asValue != null)
                     return asValue;
             }
+            else
+            {
+                StartCleanup();
+            }
+        }
 
         var andReset = Set(key, getValue());
-        StartCleanup();
+
         return andReset;
     }
 
@@ -101,38 +107,27 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
 
     private void StartCleanup()
     {
-        if (DateTime.Now > _nextExpiry)
-            lock (_objectCache)
+        if (DateTime.Now <= _nextExpiry) return;
+        lock (_objectCache)
+        {
+            if (DateTime.Now <= _nextExpiry) return;
+            _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
+            Task.Run(() =>
             {
-                if (DateTime.Now > _nextExpiry)
-                {
-                    _nextExpiry = DateTime.Now.Add(_defaultCacheTime);
-                    Task.Run(() =>
-                    {
-                        foreach (var cacheHolder in _objectCache.ToArray())
-                            if (cacheHolder.Value.IsExpired)
-                                _objectCache.TryRemove(cacheHolder.Key, out _);
-                    });
-                }
-            }
+                foreach (var cacheHolder in _objectCache.ToArray())
+                    if (cacheHolder.Value.IsExpired)
+                        _objectCache.TryRemove(cacheHolder.Key, out _);
+            });
+        }
     }
 
-    private class CacheHolder
+    private class CacheHolder(object value, DateTime expire)
     {
-        private readonly DateTime _expire;
-        private readonly object _value;
-
-        public CacheHolder(object value, DateTime expire)
-        {
-            _value = value;
-            _expire = expire;
-        }
-
-        public bool IsExpired => DateTime.Now > _expire;
+        public bool IsExpired => DateTime.Now > expire;
 
         internal TValue? AsValue<TValue>() where TValue : class
         {
-            return _value as TValue;
+            return value as TValue;
         }
     }
 }
