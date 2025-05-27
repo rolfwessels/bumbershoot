@@ -17,6 +17,21 @@ public class Output<T>
     public bool IsSuccess => this is Success;
     public bool IsFailed => this is Failed;
     public Success? AsSuccess => this as Success;
+    public Failed? AsFailed => this as Failed;
+
+    public T? AsValueOrDefault
+    {
+        get
+        {
+            if (this is Success success)
+            {
+                return success.Value;
+            }
+
+            return default;
+        }
+    }
+
     public Exception? FailedException => (this as Failed)?.Exception;
 
 

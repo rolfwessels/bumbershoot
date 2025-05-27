@@ -109,6 +109,16 @@ public class OutputTests
         intResult.AsSuccess?.Value.Should().Be(4);
     }
 
+    [Test]
+    public void EasyWayToUserOutput()
+    {
+        // arrange
+        var sample = new SampleClass();
+        // action
+        var result = sample.GetStringImplicit();
+        // assert
+        result.AsValueOrDefault.Should().Be("Im implicit");
+    }
 
     [Test]
     public void SampleClass_WhenCallingImplicitException_ShouldReturnException()
