@@ -1,6 +1,5 @@
 using Bumbershoot.Utilities.Helpers;
-using FizzWare.NBuilder;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Helpers;
@@ -12,7 +11,7 @@ public class CastHelperTests
     public void Dump_GivenStringAndName_ShouldOutputTheValueAndReturnOriginal()
     {
         // arrange
-        var one = Builder<One>.CreateNew().Build();
+        var one = new One { Value1 = "Value11", Value2 = "Value21" };
         // action
         var two = one.DynamicCastTo<Two>();
         // assert

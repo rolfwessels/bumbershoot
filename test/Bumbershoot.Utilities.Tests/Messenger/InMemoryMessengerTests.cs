@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using Bumbershoot.Utilities.Messenger;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Messenger;

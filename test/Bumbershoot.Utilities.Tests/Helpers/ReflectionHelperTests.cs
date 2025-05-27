@@ -1,6 +1,6 @@
 using System;
 using Bumbershoot.Utilities.Helpers;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 

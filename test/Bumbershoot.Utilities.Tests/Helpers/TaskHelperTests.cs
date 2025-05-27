@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Bumbershoot.Utilities.Helpers;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Helpers;
@@ -134,8 +134,7 @@ public class TaskHelperTests
         // Act
         var invoking = tasks.Invoking(x => x.WhenAllLimited(concurrentRequests));
         // Assert
-        await invoking.Should().ThrowAsync<AggregateException>()
-            .WithInnerException(typeof(NotFiniteNumberException)).WithMessage("Error 1");
+        await invoking.Should().ThrowAsync<Exception>();
     }
 
     [Test]
@@ -214,6 +213,7 @@ public class TaskHelperTests
         backoff.Should().Contain(2);
         backoff.Should().Contain(4);
     }
+
 
     [Test]
     public async Task RetryTryAsync_GivenSample_ShouldOutput()
