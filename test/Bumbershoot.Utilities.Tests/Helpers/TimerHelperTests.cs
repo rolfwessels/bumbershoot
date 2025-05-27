@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Bumbershoot.Utilities.Helpers;
 using FluentAssertions;
 using NUnit.Framework;
@@ -17,6 +18,27 @@ public class TimerHelperTests
         // assert
         stopwatch.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(50);
         stopwatch.ElapsedMilliseconds.Should().BeLessOrEqualTo(50 * 3); //allow slowness
+    }
+
+    [Test]
+    public async Task WaitForAsync_GivenValidValue_ShouldReturnQuickSticks()
+    {
+        // action
+        var stopwatch = new Stopwatch().With(x => x.Start());
+        await "test".WaitForAsync(x => x == "test", 50);
+        // assert
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(50);
+    }
+
+    [Test]
+    public async Task WaitForAsync_GivenClassWithAsyncMethod_ShouldCallMethodUntilValueResult()
+    {
+        // action
+        var sampleWithAsyncMethod = new SampleWithAsyncMethod();
+        var expected = "test-2";
+        var waitForAsync = await sampleWithAsyncMethod.WaitForAsync(x => x.GetValueAsync(), x => x == expected, 50);
+        // assert
+        waitForAsync.Should().Be(expected);
     }
 
     [Test]
@@ -41,5 +63,16 @@ public class TimerHelperTests
         var shortTime = TimeSpan.FromMilliseconds(milliSeconds).ShortTime();
         // assert
         shortTime.Should().Be(expected);
+    }
+
+    public class SampleWithAsyncMethod()
+    {
+        public int called = 1;
+
+        public async Task<string> GetValueAsync()
+        {
+            await Task.Delay(10);
+            return "test-" + called++;
+        }
     }
 }

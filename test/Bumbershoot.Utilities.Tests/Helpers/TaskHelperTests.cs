@@ -214,6 +214,7 @@ public class TaskHelperTests
         backoff.Should().Contain(4);
     }
 
+
     [Test]
     public async Task RetryTryAsync_GivenSample_ShouldOutput()
     {

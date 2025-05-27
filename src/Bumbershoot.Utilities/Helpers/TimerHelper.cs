@@ -7,30 +7,64 @@ namespace Bumbershoot.Utilities.Helpers;
 
 public static class TimerHelper
 {
-    public static async Task<T> WaitForAsync<T>(this T updateModels, Func<T, bool> o, int timeOut = 500)
+    private const double DelayMultiplier = 1.5;
+
+    public static async Task<T> WaitForAsync<T>(this T updateModels,
+        Func<T, bool> o,
+        int timeoutMilliseconds = 500,
+        int initialDelayMilliseconds = 10)
     {
-        var stopTime = DateTime.Now.AddMilliseconds(timeOut);
-        var millisecondsTimeout = 1;
+        var stopTime = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
+        double currentDelay = initialDelayMilliseconds;
         bool result;
         do
         {
             result = o(updateModels);
-            await Task.Delay((millisecondsTimeout += millisecondsTimeout == 0 ? 1 : millisecondsTimeout).Dump());
-        } while (!result && DateTime.Now < stopTime);
+            if (result) continue;
+            await Task.Delay((int)currentDelay);
+            currentDelay = Math.Min(currentDelay * DelayMultiplier, timeoutMilliseconds);
+        } while (!result && DateTime.UtcNow < stopTime);
 
         return updateModels;
     }
 
-    public static T WaitFor<T>(this T updateModels, Func<T, bool> o, int timeOut = 500)
+    public static async Task<TResult> WaitForAsync<T, TResult>(
+        this T source,
+        Func<T, Task<TResult>> getResultAsync,
+        Func<TResult, bool> isValid,
+        int timeoutMilliseconds = 3000,
+        int initialDelayMilliseconds = 10)
     {
-        var stopTime = DateTime.Now.AddMilliseconds(timeOut);
-        var millisecondsTimeout = 0;
+        var stopTime = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
+        double currentDelay = initialDelayMilliseconds;
+        TResult? result = default;
+        while (DateTime.UtcNow < stopTime)
+        {
+            result = await getResultAsync(source);
+            if (isValid(result))
+                break;
+            await Task.Delay((int)currentDelay);
+            currentDelay = Math.Min(currentDelay * DelayMultiplier, timeoutMilliseconds);
+        }
+
+        return result!;
+    }
+
+    public static T WaitFor<T>(this T updateModels,
+        Func<T, bool> o,
+        int timeoutMilliseconds = 500,
+        int initialDelayMilliseconds = 10)
+    {
+        var stopTime = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
+        double currentDelay = initialDelayMilliseconds;
         bool result;
         do
         {
             result = o(updateModels);
-            Thread.Sleep(millisecondsTimeout += millisecondsTimeout == 0 ? 1 : millisecondsTimeout);
-        } while (!result && DateTime.Now < stopTime);
+            if (result) continue;
+            Thread.Sleep((int)currentDelay);
+            currentDelay = Math.Min(currentDelay * DelayMultiplier, timeoutMilliseconds);
+        } while (!result && DateTime.UtcNow < stopTime);
 
         return updateModels;
     }
