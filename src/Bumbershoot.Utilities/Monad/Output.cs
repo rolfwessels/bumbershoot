@@ -4,25 +4,16 @@ namespace Bumbershoot.Utilities.Monad;
 
 public class Output<T>
 {
-    public class Success : Output<T>
+    public class Success(T value) : Output<T>
     {
-        public T Value { get; }
-
-        public Success(T value)
-        {
-            Value = value;
-        }
+        public T Value { get; } = value;
     }
 
-    public class Failed : Output<T> 
+    public class Failed(Exception exception) : Output<T>
     {
-        public Exception Exception { get; }
-
-        public Failed(Exception exception)
-        {
-            Exception = exception;
-        }
+        public Exception Exception { get; } = exception;
     }
+
     public bool IsSuccess => this is Success;
     public bool IsFailed => this is Failed;
     public Success? AsSuccess => this as Success;
@@ -35,10 +26,11 @@ public class Output<T>
         {
             action(success.Value);
         }
+
         return this;
     }
 
-    public Output<T2> ThenMap<T2>(Func<T,T2> action)
+    public Output<T2> ThenMap<T2>(Func<T, T2> action)
     {
         try
         {
@@ -52,6 +44,7 @@ public class Output<T>
         {
             return new Output<T2>.Failed(e);
         }
+
         return new Output<T2>.Failed(FailedException!);
     }
 
@@ -63,6 +56,18 @@ public class Output<T>
         }
 
         return this;
+    }
+
+    public static implicit operator
+        Output<T>(T result)
+    {
+        return new Success(result);
+    }
+
+    public static implicit operator
+        Output<T>(Exception failedException)
+    {
+        return new Failed(failedException);
     }
 }
 
@@ -88,5 +93,4 @@ public class Output : Output<bool>
     {
         return new Output<T>.Failed(exception);
     }
-
 }
