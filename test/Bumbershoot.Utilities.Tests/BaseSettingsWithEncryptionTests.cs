@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using AwesomeAssertions;
 using Bumbershoot.Utilities.Encryption;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
@@ -51,7 +51,5 @@ public class BaseSettingsWithEncryptionTests
         }
 
         public string Encrypted => ReadConfigValue("Encrypted", "???");
-
-        
     }
 }

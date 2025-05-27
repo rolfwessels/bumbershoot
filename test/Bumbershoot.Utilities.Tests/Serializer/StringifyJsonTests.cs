@@ -1,5 +1,5 @@
 using Bumbershoot.Utilities.Serializer;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Serializer

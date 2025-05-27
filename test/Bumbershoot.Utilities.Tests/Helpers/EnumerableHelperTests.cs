@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Bumbershoot.Utilities.Helpers;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Helpers

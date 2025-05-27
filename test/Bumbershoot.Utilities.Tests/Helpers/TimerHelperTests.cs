@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Bumbershoot.Utilities.Helpers;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Helpers;
@@ -17,7 +17,7 @@ public class TimerHelperTests
         var waitFor = "test".WaitFor(x => x == "", 50);
         // assert
         stopwatch.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(50);
-        stopwatch.ElapsedMilliseconds.Should().BeLessOrEqualTo(50 * 3); //allow slowness
+        stopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(50 * 3); //allow slowness
     }
 
     [Test]

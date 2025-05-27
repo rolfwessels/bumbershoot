@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Bumbershoot.Utilities.Cache;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Cache;

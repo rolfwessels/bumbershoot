@@ -1,5 +1,5 @@
 ﻿using Bumbershoot.Utilities.Encryption;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Encryption;

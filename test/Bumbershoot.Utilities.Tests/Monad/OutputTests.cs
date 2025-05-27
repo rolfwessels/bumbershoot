@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using Bumbershoot.Utilities.Monad;
-using FluentAssertions;
+using AwesomeAssertions;
 using NUnit.Framework;
 
 namespace Bumbershoot.Utilities.Tests.Monad;
