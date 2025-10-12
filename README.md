@@ -44,6 +44,8 @@ result1.Should().Be("one");
 result2.Should().Be("one"); // because value is already in the cache
 ```
 
+📖 **[Complete Caching Documentation](docs/cache.md)** - Comprehensive guide covering both InMemoryCache and FileCache implementations, API reference, best practices, and usage patterns.
+
 ### Aes encryption
 
 I wanted a Aes encryption where the key can be any length and it works with string input and output
