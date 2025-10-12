@@ -32,7 +32,7 @@ public class InMemoryCacheTests
     {
         // arrange
         var defaultCacheTime = TimeSpan.FromMilliseconds(100);
-        var key = "value";
+        var key = "value" + DateTime.Now;
         ISimpleObjectCacheASync cache = type switch
         {
             "InMemoryCache" => new InMemoryCache(defaultCacheTime),
@@ -53,7 +53,6 @@ public class InMemoryCacheTests
         var resultAgain = cache.GetOrSetAsync(key, value);
         var result1 = cache.GetAndResetAsync(key, value);
         await Task.WhenAll(result1, resultAgain, result2);
-        var getResultBefore = cache.GetAsync<string>(key);
         await Task.Delay(defaultCacheTime + defaultCacheTime);
         var cashSync = (ISimpleObjectCache)cache;
         var getResult = cashSync.Get<string>(key);
@@ -62,8 +61,8 @@ public class InMemoryCacheTests
         var result3 = cashSync.GetOrSet(key, () => "two");
 
         // assert
+        result1.Result.Should().Be("one");
         called.Should().Be(1);
-        getResultBefore.Result.Should().Be("one");
         resultAgain.Result.Should().Be("one");
         getResult.Should().Be(null);
         reset.Should().BeFalse();
@@ -72,6 +71,29 @@ public class InMemoryCacheTests
         result2.Result.Should().Be("one");
         result3.Should().Be("two");
     }
+
+    [Test]
+    [TestCase("InMemoryCache")]
+    [TestCase("FileCache")]
+    public async Task GetStaleAsync_WhenValueExpired_ShouldReturnStaleValue(string type)
+    {
+        // arrange
+        var expiry = TimeSpan.FromMilliseconds(25);
+        ISimpleObjectCacheASync cache = type == "InMemoryCache"
+            ? new InMemoryCache(expiry)
+            : new FileCache(expiry, "stale_unified");
+
+        var orSetAsync = await cache.GetOrSetAsync("stale:key", () => Task.FromResult("stale-value"));
+        var notStale = await cache.GetStaleAsync<string>("stale:key")!;
+        await Task.Delay(60); // exceed expiry
+        var stale = await cache.GetStaleAsync<string>("stale:key")!;
+
+        // assert
+        orSetAsync.Should().Be("stale-value");
+        notStale.Should().Be("stale-value");
+        stale.Should().Be("stale-value");
+    }
+
 
     [Test]
     public void Get_WhenCacheDoesExist_ShouldNotGetValue()
@@ -91,10 +113,12 @@ public class InMemoryCacheTests
     {
         // arrange
         Setup();
-        _inMemoryCache.GetOrSet("value", () => { return "newValue"; });
+        var value = "value";
+        var orSet = _inMemoryCache.GetOrSet(value, () => { return "newValue"; });
         // action
-        var result = _inMemoryCache.Get<string>("value");
+        var result = _inMemoryCache.Get<string>(value);
         // assert
+        orSet.Should().Be("newValue");
         result.Should().Be("newValue");
     }
 
@@ -162,5 +186,41 @@ public class InMemoryCacheTests
         // assert
         result1.Should().Be("one");
         result2.Should().Be("two"); // because value is already in the cache
+    }
+
+    [Test]
+    [TestCase("InMemoryCache")]
+    [TestCase("FileCache")]
+    public async Task GetOrRefreshAsync_WhenValueIsFresh_ShouldReturnWithoutRefresh(string type)
+    {
+        // arrange
+        var callCount = 0;
+        var expiry = TimeSpan.FromMilliseconds(10);
+        ISimpleObjectCacheASync cache = type == "InMemoryCache"
+            ? new InMemoryCache(expiry)
+            : new FileCache(expiry, "refresh_fresh");
+
+        var factory = async () =>
+        {
+            callCount++;
+            await Task.Delay(1);
+            return $"value-{callCount}";
+        };
+        cache.Reset();
+
+        var first = cache.GetOrRefreshAsync("fresh:key", factory);
+        var second = cache.GetOrRefreshAsync("fresh:key", factory);
+        await Task.WhenAll(second, first);
+
+        await Task.Delay(50); // wait to ensure no background call
+        var third = await cache.GetOrRefreshAsync("fresh:key", factory);
+        var fourth = await cache.GetOrRefreshAsync("fresh:key", factory);
+
+        // assert
+        first.Result.Should().Be("value-1");
+        second.Result.Should().Be("value-1");
+        third.Should().Be("value-1");
+        fourth.Should().Be("value-2");
+        callCount.Should().Be(2); // factory should NOT be called again
     }
 }

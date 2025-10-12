@@ -17,7 +17,7 @@ public static class TaskHelper
         allReferences.ContinueWith(logUpdate);
     }
 
-    public static void ContinueWithAndLogError(this Task sendAsync, Action<string, Exception> log = null)
+    public static void ContinueWithAndLogError(this Task sendAsync, Action<string, Exception>? log = null)
     {
         sendAsync.ContinueWith(x =>
         {

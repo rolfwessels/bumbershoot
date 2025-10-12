@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Bumbershoot.Utilities.Helpers;
 
 namespace Bumbershoot.Utilities.Cache;
 
@@ -60,21 +61,20 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
 
     public T GetOrSet<T>(string key, Func<T> func) where T : class
     {
-        var cacheHolder =
-            _objectCache.GetOrAdd(key, _ => new CacheHolder(func(), DateTime.Now.Add(_defaultCacheTime)));
-        if (cacheHolder.IsExpired)
-            StartCleanup();
-        else
-            return cacheHolder.AsValue<T>()!;
-        return Set(key, func());
+        return GetOrSetAsync(key, () => Task.FromResult(func())).GetAwaiter().GetResult();
     }
 
-    public TValue Set<TValue>(string key, TValue value)
+    public Task<TValue> SetAsync<TValue>(string key, Task<TValue> value)
     {
         Debug.Assert(value != null, nameof(value) + " != null");
         var cacheHolder = new CacheHolder(value, DateTime.Now.Add(_defaultCacheTime));
         _objectCache.AddOrUpdate(key, _ => cacheHolder, (_, _) => cacheHolder);
         return value;
+    }
+
+    public TValue Set<TValue>(string key, TValue value)
+    {
+        return SetAsync(key, Task.FromResult(value)).GetAwaiter().GetResult();
     }
 
     public bool Reset(string? value = null)
@@ -85,24 +85,57 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
         return true;
     }
 
-    public Task<TValue>? GetAsync<TValue>(string key)
-    {
-        return Get<Task<TValue>>(key);
-    }
 
     public Task<T> GetOrSet<T>(string key, Func<Task<T>> getValue) where T : class
     {
         return GetOrSetAsync(key, getValue);
     }
 
-    public TValue? Get<TValue>(string key) where TValue : class
+    public Task<TValue>? GetAsync<TValue>(string key)
     {
         if (_objectCache.TryGetValue(key, out var values))
             if (!values.IsExpired)
-                return values.AsValue<TValue>();
+                return values.AsValue<Task<TValue>>();
             else
                 StartCleanup();
         return null;
+    }
+
+    public Task<TValue?> GetStaleAsync<TValue>(string key)
+    {
+        if (_objectCache.TryGetValue(key, out var values))
+        {
+            // Return even if expired; we intentionally do NOT trigger cleanup here.
+            var taskValue = values.AsValue<Task<TValue?>>();
+            if (taskValue != null)
+                return taskValue;
+        }
+
+        return Task.FromResult<TValue?>(default);
+    }
+
+    public Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue)
+    {
+        var addOrUpdate = _objectCache.AddOrUpdate(key,
+            _ => new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime)),
+            (_, existing) => existing
+        );
+        if (addOrUpdate.IsExpired)
+        {
+            _objectCache.AddOrUpdate(key,
+                _ => new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime)),
+                (_, existing) => existing.IsExpired
+                    ? new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime))
+                    : existing
+            );
+        }
+
+        return addOrUpdate.AsValue<Task<TValue>>()!;
+    }
+
+    public TValue? Get<TValue>(string key) where TValue : class
+    {
+        return GetAsync<TValue>(key)?.GetAwaiter().GetResult();
     }
 
     private void StartCleanup()

@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Bumbershoot.Utilities.Cache;
 
-public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
+public class FileCache : ISimpleObjectCacheASync, ISimpleObjectCache
 {
     private readonly string _path;
     private readonly TimeSpan _timeOut;
@@ -25,17 +27,6 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
         _timeOut = fromMinutes ?? TimeSpan.FromMinutes(5);
     }
 
-    public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
-    {
-        var fileName = GetFileName(key);
-        if (File.Exists(fileName))
-        {
-            File.SetLastWriteTimeUtc(fileName, DateTime.UtcNow);
-        }
-
-        var found = Get<TValue>(key);
-        return found ?? Set(key, getValue());
-    }
 
     public Task<TValue> GetAndResetAsync<TValue>(string key, Func<Task<TValue>> getValue)
     {
@@ -54,47 +45,25 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
     }
 
 
-    public TValue Set<TValue>(string key, TValue value)
-    {
-        var fileName = GetFileName(key);
-        File.WriteAllText(fileName, JsonSerializer.Serialize(value));
-        return value;
-    }
-
     private string GetFileName(string key)
     {
-        return Path.Combine(_path, key.Replace(".", "_").Replace(":", "_"));
-    }
-
-
-    public TValue? Get<TValue>(string key) where TValue : class
-    {
-        var fileName = GetFileName(key);
-        if (typeof(TValue).IsGenericType && typeof(TValue).GetGenericTypeDefinition() == typeof(Task<>))
+        var replace = Regex.Replace(key, "[^a-zA-Z0-9_.-]", "_") + ".json";
+        var i = 100;
+        if (replace.Length > i)
         {
-            throw new InvalidOperationException("Use GetOrSetAsync for Task<T> types");
+            var hash = key.GetHashCode().ToString("X");
+            replace = replace.Substring(0, i - hash.Length) + hash + ".json";
         }
 
-        if (File.Exists(fileName))
-        {
-            var lastWriteTimeUtc = DateTime.UtcNow - File.GetLastWriteTimeUtc(fileName);
-            if (lastWriteTimeUtc < _timeOut)
-            {
-                return JsonSerializer.Deserialize<TValue>(File.ReadAllText(fileName));
-            }
-
-            File.Delete(fileName);
-        }
-
-        return null;
+        return Path.Combine(_path, replace);
     }
 
     public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> getValue)
     {
-        var found = GetAsync<T>(key);
+        var found = await GetAsync<T>(key);
         if (found != null)
         {
-            return await found;
+            return found;
         }
 
         var fileName = GetFileName(key);
@@ -102,16 +71,16 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
         try
         {
             await semaphore.WaitAsync();
-            found = GetAsync<T>(key);
+            found = await GetAsync<T>(key);
             if (found != null)
             {
-                return await found;
+                return found;
             }
 
-            var value = await getValue();
-            Set(key, value);
+            var value = getValue();
+            await SetAsync(key, value);
             _conCurrencyCheck.Remove(fileName, out _);
-            return value;
+            return await value;
         }
         finally
         {
@@ -119,15 +88,29 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
         }
     }
 
-    public Task<TValue>? GetAsync<TValue>(string key)
+    private async Task<T> SetAsync<T>(string key, Task<T> task)
+    {
+        var fileName = GetFileName(key);
+        var value = await task;
+        var serialize = JsonSerializer.Serialize(value);
+        await File.WriteAllTextAsync(fileName, serialize);
+        return value;
+    }
+
+    public async Task<TValue?> GetAsync<TValue>(string key)
+    {
+        return await GetValue<TValue>(key, freshOnly: true);
+    }
+
+    private async Task<TValue?> GetValue<TValue>(string key, bool freshOnly)
     {
         var fileName = GetFileName(key);
         if (File.Exists(fileName))
         {
             var lastWriteTimeUtc = DateTime.UtcNow - File.GetLastWriteTimeUtc(fileName);
-            if (lastWriteTimeUtc < _timeOut)
+            if (lastWriteTimeUtc < _timeOut || !freshOnly)
             {
-                return Task.Run(() =>
+                return await Task.Run(() =>
                 {
                     var readAllText = File.ReadAllText(fileName);
                     var deserialize = JsonSerializer.Deserialize<TValue>(readAllText);
@@ -136,17 +119,56 @@ public class FileCache : ISimpleObjectCache, ISimpleObjectCacheASync
                 });
             }
 
-            File.Delete(fileName);
+            if (freshOnly)
+            {
+                File.Delete(fileName);
+            }
         }
 
-        return null;
+        return default;
     }
 
-
-    public T GetOrSet<T>(string key, Func<T> getValue) where T : class
+    public Task<TValue?> GetStaleAsync<TValue>(string key)
     {
-        var found = Get<T>(key);
-        return found ?? Set(key, getValue());
+        return GetValue<TValue>(key, freshOnly: false);
+    }
+
+    public async Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue)
+    {
+        var readStale = await GetValue<TValue>(key, freshOnly: false);
+        if (readStale == null)
+        {
+            return await GetOrSetAsync(key, getValue);
+        }
+
+        var lastWriteTimeUtc = DateTime.UtcNow - File.GetLastWriteTimeUtc(GetFileName(key));
+        if (lastWriteTimeUtc > _timeOut)
+        {
+            await GetOrSetAsync(key, getValue);
+        }
+
+
+        return readStale;
+    }
+
+    public TValue Set<TValue>(string key, TValue value)
+    {
+        return SetAsync(key, Task.FromResult(value)).GetAwaiter().GetResult();
+    }
+
+    public TValue? Get<TValue>(string key) where TValue : class
+    {
+        return GetAsync<TValue>(key)?.GetAwaiter().GetResult();
+    }
+
+    public TValue GetOrSet<TValue>(string key, Func<TValue> getValue) where TValue : class
+    {
+        return GetOrSetAsync(key, () => Task.FromResult(getValue())).GetAwaiter().GetResult();
+    }
+
+    public TValue GetAndReset<TValue>(string key, Func<TValue> getValue) where TValue : class
+    {
+        return GetAndResetAsync(key, () => Task.FromResult(getValue())).GetAwaiter().GetResult();
     }
 
     public bool Reset(string? value = null)
