@@ -99,16 +99,16 @@ public class FileCache : ISimpleObjectCacheASync, ISimpleObjectCache
 
     public async Task<TValue?> GetAsync<TValue>(string key)
     {
-        return await GetValue<TValue>(key, notStale: true);
+        return await GetValue<TValue>(key, freshOnly: true);
     }
 
-    private async Task<TValue?> GetValue<TValue>(string key, bool notStale)
+    private async Task<TValue?> GetValue<TValue>(string key, bool freshOnly)
     {
         var fileName = GetFileName(key);
         if (File.Exists(fileName))
         {
             var lastWriteTimeUtc = DateTime.UtcNow - File.GetLastWriteTimeUtc(fileName);
-            if (lastWriteTimeUtc < _timeOut || !notStale)
+            if (lastWriteTimeUtc < _timeOut || !freshOnly)
             {
                 return await Task.Run(() =>
                 {
@@ -119,7 +119,7 @@ public class FileCache : ISimpleObjectCacheASync, ISimpleObjectCache
                 });
             }
 
-            if (notStale)
+            if (freshOnly)
             {
                 File.Delete(fileName);
             }
@@ -130,7 +130,25 @@ public class FileCache : ISimpleObjectCacheASync, ISimpleObjectCache
 
     public Task<TValue?> GetStaleAsync<TValue>(string key)
     {
-        return GetValue<TValue>(key, notStale: false);
+        return GetValue<TValue>(key, freshOnly: false);
+    }
+
+    public async Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue)
+    {
+        var readStale = await GetValue<TValue>(key, freshOnly: false);
+        if (readStale == null)
+        {
+            return await GetOrSetAsync(key, getValue);
+        }
+
+        var lastWriteTimeUtc = DateTime.UtcNow - File.GetLastWriteTimeUtc(GetFileName(key));
+        if (lastWriteTimeUtc > _timeOut)
+        {
+            await GetOrSetAsync(key, getValue);
+        }
+
+
+        return readStale;
     }
 
     public TValue Set<TValue>(string key, TValue value)

@@ -187,4 +187,40 @@ public class InMemoryCacheTests
         result1.Should().Be("one");
         result2.Should().Be("two"); // because value is already in the cache
     }
+
+    [Test]
+    [TestCase("InMemoryCache")]
+    [TestCase("FileCache")]
+    public async Task GetOrRefreshAsync_WhenValueIsFresh_ShouldReturnWithoutRefresh(string type)
+    {
+        // arrange
+        var callCount = 0;
+        var expiry = TimeSpan.FromMilliseconds(10);
+        ISimpleObjectCacheASync cache = type == "InMemoryCache"
+            ? new InMemoryCache(expiry)
+            : new FileCache(expiry, "refresh_fresh");
+
+        var factory = async () =>
+        {
+            callCount++;
+            await Task.Delay(1);
+            return $"value-{callCount}";
+        };
+        cache.Reset();
+
+        var first = cache.GetOrRefreshAsync("fresh:key", factory);
+        var second = cache.GetOrRefreshAsync("fresh:key", factory);
+        await Task.WhenAll(second, first);
+
+        await Task.Delay(50); // wait to ensure no background call
+        var third = await cache.GetOrRefreshAsync("fresh:key", factory);
+        var fourth = await cache.GetOrRefreshAsync("fresh:key", factory);
+
+        // assert
+        first.Result.Should().Be("value-1");
+        second.Result.Should().Be("value-1");
+        third.Should().Be("value-1");
+        fourth.Should().Be("value-2");
+        callCount.Should().Be(2); // factory should NOT be called again
+    }
 }

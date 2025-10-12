@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Bumbershoot.Utilities.Helpers;
 
 namespace Bumbershoot.Utilities.Cache;
 
@@ -108,7 +109,27 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
             var taskValue = values.AsValue<Task<TValue>>();
             return taskValue;
         }
+
         return null;
+    }
+
+    public Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue)
+    {
+        var addOrUpdate = _objectCache.AddOrUpdate(key,
+            _ => new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime)),
+            (_, existing) => existing
+        );
+        if (addOrUpdate.IsExpired)
+        {
+            _objectCache.AddOrUpdate(key,
+                _ => new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime)),
+                (_, existing) => existing.IsExpired
+                    ? new CacheHolder(getValue(), DateTime.Now.Add(_defaultCacheTime))
+                    : existing
+            );
+        }
+
+        return addOrUpdate.AsValue<Task<TValue>>()!;
     }
 
     public TValue? Get<TValue>(string key) where TValue : class

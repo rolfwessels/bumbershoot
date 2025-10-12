@@ -9,5 +9,6 @@ public interface ISimpleObjectCacheASync
     Task<TValue> GetOrSetAsync<TValue>(string key, Func<Task<TValue>> getValue);
     Task<TValue> GetAndResetAsync<TValue>(string key, Func<Task<TValue>> getValue);
     Task<TValue> GetOrSet<TValue>(string key, Func<Task<TValue>> getValue) where TValue : class;
+    Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue);
     bool Reset(string? value = null);
 }
