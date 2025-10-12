@@ -34,13 +34,13 @@ public class FileCacheTests
         Setup();
         var customPrefix = "custom_test_cache";
         var cache = new FileCache(TimeSpan.FromMinutes(5), customPrefix);
-        
+
         try
         {
             // action
             cache.Set("test_key", "test_value");
             var result = cache.Get<string>("test_key");
-            
+
             // assert
             result.Should().Be("test_value");
         }
@@ -56,11 +56,11 @@ public class FileCacheTests
         // arrange
         Setup();
         var complexObject = CreateTestObject();
-        
+
         // action
         _fileCache.Set("complex_key", complexObject);
         var retrieved = _fileCache.Get<TestObject>("complex_key");
-        
+
         // assert
         retrieved.Should().NotBe(null);
         retrieved.Id.Should().Be(complexObject.Id);
@@ -76,14 +76,14 @@ public class FileCacheTests
         Setup();
         var testValue = "persistent_value";
         _fileCache.Set("persist_key", testValue);
-        
+
         // action - simulate application restart by creating new cache instance
         var newCacheInstance = new FileCache(TimeSpan.FromMinutes(10), "test_cache");
         var result = newCacheInstance.Get<string>("persist_key");
-        
+
         // assert
         result.Should().Be(testValue);
-        
+
         // cleanup
         newCacheInstance.Reset();
     }
@@ -95,9 +95,9 @@ public class FileCacheTests
         Setup();
         var factoryCallCount = 0;
         var tasks = new Task<string>[10];
-        
+
         // action
-        for (int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _fileCache.GetOrSetAsync("concurrent_key", async () =>
             {
@@ -106,15 +106,32 @@ public class FileCacheTests
                 return "concurrent_value";
             });
         }
-        
+
         var results = await Task.WhenAll(tasks);
-        
+
         // assert
         factoryCallCount.Should().Be(1); // Factory should only be called once due to semaphore
         foreach (var result in results)
         {
             result.Should().Be("concurrent_value");
         }
+    }
+
+
+    [Test]
+    public async Task GetStaleAsync_WhenNotExpired_ShouldReturnValue()
+    {
+        // arrange
+        Setup();
+        _fileCache.Set("fresh:key", "fresh-file");
+
+        // act
+        var stale = await _fileCache.GetStaleAsync<string>("fresh:key");
+        var fresh = await _fileCache.GetAsync<string>("fresh:key");
+
+        // assert
+        stale.Should().Be("fresh-file");
+        fresh.Should().Be("fresh-file");
     }
 
     private static TestObject CreateTestObject() => new()
