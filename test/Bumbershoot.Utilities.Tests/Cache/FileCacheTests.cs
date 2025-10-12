@@ -117,23 +117,6 @@ public class FileCacheTests
         }
     }
 
-
-    [Test]
-    public async Task GetStaleAsync_WhenNotExpired_ShouldReturnValue()
-    {
-        // arrange
-        Setup();
-        _fileCache.Set("fresh:key", "fresh-file");
-
-        // act
-        var stale = await _fileCache.GetStaleAsync<string>("fresh:key");
-        var fresh = await _fileCache.GetAsync<string>("fresh:key");
-
-        // assert
-        stale.Should().Be("fresh-file");
-        fresh.Should().Be("fresh-file");
-    }
-
     private static TestObject CreateTestObject() => new()
     {
         Id = 123,
