@@ -101,16 +101,17 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
         return null;
     }
 
-    public Task<TValue>? GetStaleAsync<TValue>(string key)
+    public Task<TValue?> GetStaleAsync<TValue>(string key)
     {
         if (_objectCache.TryGetValue(key, out var values))
         {
             // Return even if expired; we intentionally do NOT trigger cleanup here.
-            var taskValue = values.AsValue<Task<TValue>>();
-            return taskValue;
+            var taskValue = values.AsValue<Task<TValue?>>();
+            if (taskValue != null)
+                return taskValue;
         }
 
-        return null;
+        return Task.FromResult<TValue?>(default);
     }
 
     public Task<TValue> GetOrRefreshAsync<TValue>(string key, Func<Task<TValue>> getValue)

@@ -9,7 +9,7 @@ docker-warning := ""
 RED=\033[0;31m
 GREEN=\033[0;32m
 NC=\033[0m # No Color
-versionPrefix := 1.2
+versionPrefix := 1.3
 version := $(versionPrefix).$(shell git rev-list HEAD --count)
 
 dockerhub := rolfwessels/Bumbershoot
