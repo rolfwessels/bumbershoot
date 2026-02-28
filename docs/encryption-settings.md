@@ -64,35 +64,38 @@ builder.Services.AddSingleton<AppSettings>(sp =>
 var app = builder.Build();
 ```
 
-### Step 3: Encrypt Your Values
+### Step 3: Generate Encrypted Values (via Test)
 
-First, generate encrypted values using `GetEncryptedValue`:
-
-```csharp
-var encryption = new SimpleAes();
-var key = "your-secret-key-here";
-var plaintext = "my-database-password";
-var encrypted = "EN|" + encryption.Encrypt(key, plaintext);
-
-Console.WriteLine(encrypted);
-// Output: EN|...encrypted-gibberish...
-```
-
-Or use this helper in a utility class:
+The easiest way to generate encrypted values is to write a test that uses your settings class. This approach:
+- Uses the loaded encryption key automatically
+- Produces console output ready to copy-paste into `appsettings.json`
+- Serves as documentation of what values are encrypted
 
 ```csharp
-public static class EncryptionHelper
+[Test]
+public void GetEncryptedValue_ProducesEnPrefixedCipher()
 {
-    public static string GenerateEncryptedValue(string key, string plaintext)
-    {
-        var encryption = new SimpleAes();
-        return "EN|" + encryption.Encrypt(key, plaintext);
-    }
-}
+    // arrange
+    var sut = new AppSettings(configuration);
+    var apiKey = "my-secret-api-key-12345";
 
-// Usage:
-var encrypted = EncryptionHelper.GenerateEncryptedValue("my-key", "secret-value");
+    // act
+    var encrypted = sut.GetEncryptedValue(apiKey);
+
+    // assert
+    encrypted.Should().StartWith("EN|");
+    Console.WriteLine($"Plain API Key: {apiKey.Mask(3)}");
+    Console.WriteLine($"Paste into appsettings.json → AppSettings:ApiKey: {encrypted}");
+}
 ```
+
+**Console output:**
+```
+Plain API Key: my-XXXX-12345
+Paste into appsettings.json → AppSettings:ApiKey: EN|AQIDANz5OLvq1HRbtall...
+```
+
+Simply copy the `EN|...` value and paste it into your `appsettings.json`.
 
 ### Step 4: Store Encrypted Values in appsettings.json
 
@@ -272,6 +275,21 @@ public class DatabaseSettings : BaseSettingsWithEncryption
 }
 ```
 
+**To generate encrypted connection string**, write a test:
+
+```csharp
+[Test]
+public void GenerateEncryptedConnectionString()
+{
+    var sut = new DatabaseSettings(configuration);
+    var plainConnectionString = "Server=localhost;Database=MyDb;User Id=sa;Password=MyPassword123";
+    
+    var encrypted = sut.GetEncryptedValue(plainConnectionString);
+    
+    Console.WriteLine($"Paste into appsettings.json → Database:ConnectionString: {encrypted}");
+}
+```
+
 **appsettings.json:**
 ```json
 {
@@ -296,6 +314,21 @@ public class ApiSettings : BaseSettingsWithEncryption
     public string SendGridApiKey => ReadConfigValue("SendGridApiKey", "");
     public string TwilioAuthToken => ReadConfigValue("TwilioAuthToken", "");
     public string StripeSecretKey => ReadConfigValue("StripeSecretKey", "");
+}
+```
+
+**Generate tests for each API key:**
+
+```csharp
+[Test]
+public void GenerateEncryptedSendGridKey()
+{
+    var sut = new ApiSettings(configuration);
+    var plainKey = "SG.your-sendgrid-key-here";
+    
+    var encrypted = sut.GetEncryptedValue(plainKey);
+    Console.WriteLine($"Paste: {encrypted}");
+    Console.WriteLine($"Masked: {plainKey.Mask(5)}");
 }
 ```
 
@@ -389,17 +422,27 @@ Or set it as an environment variable (if using environment variables in config).
 
 **Problem:** Your decryption key doesn't match the one used to encrypt.
 
-**Solution:** Verify you're using the correct key and that the encrypted value was created with that key.
+**Solution:** Verify you're using the correct key and that the encrypted value was created with that key. Use the test pattern above to re-generate the encrypted value with the correct key.
 
 ### Decrypted Value is Corrupted
 
 **Problem:** The encrypted value is partially or incorrectly decrypted.
 
 **Solution:**
-- Check for typos in the encrypted value
+- Check for typos in the encrypted value (use the test pattern to re-generate it)
 - Ensure the prefix is correct (default: `EN|`)
 - Verify the encryption key hasn't changed
-- Re-encrypt the value using the current key
+- Re-encrypt the value using the test pattern with the current key
+
+### How to Generate an Encrypted Value
+
+Use the test pattern shown in **Step 3** above:
+1. Create a test method with your settings instance
+2. Call `GetEncryptedValue(yourPlaintextValue)`
+3. Copy the output from the console
+4. Paste into `appsettings.json`
+
+This approach automatically uses the correct encryption key and format.
 
 ## See Also
 
