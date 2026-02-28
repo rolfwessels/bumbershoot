@@ -6,7 +6,7 @@ General C# utils
 
 ### Strongly typed configuration
 
-I Like strongly typed app settings and configurations. The following class allows me to easily setup a strongly typed class that has defaults and can read from all appsettings.
+I like strongly typed app settings and configurations. The following class allows me to easily setup a strongly typed class that has defaults and can read from all appsettings.
 
 ```csharp
 public class TestSettings : BaseSettings
@@ -30,6 +30,42 @@ public class TestSettings : BaseSettings
 Console.Out(TestSettings.Instance.BoolValue); // Writes "False"
 Console.Out(TestSettings.Instance.SampleSettings); // Writes "Bumbershoot-Sample" (unless the json has other value)
 ```
+
+### Encrypted settings for sensitive data
+
+For sensitive configuration values (API keys, passwords, connection strings), I use `BaseSettingsWithEncryption`. This allows storing **encrypted values in source code** while keeping the decryption key external (environment variables, secret managers, etc.).
+
+```csharp
+public class AppSettings : BaseSettingsWithEncryption
+{
+    public AppSettings(IConfiguration configuration)
+        : base(configuration, "AppSettings", "EncryptionKey")
+    {
+    }
+
+    // Unencrypted configuration
+    public string Environment => ReadConfigValue("Environment", "Development");
+
+    // Encrypted configuration (automatically decrypted on read)
+    public string DatabasePassword => ReadConfigValue("DatabasePassword", "");
+    public string ApiKey => ReadConfigValue("ApiKey", "");
+}
+```
+
+Store encrypted values in `appsettings.json`:
+
+```json
+{
+  "AppSettings": {
+    "Environment": "Production",
+    "DatabasePassword": "EN|AQIDANz5OLvq1HRbtall...",
+    "ApiKey": "EN|AQIDANz5OLvq1HRbtall..."
+  },
+  "EncryptionKey": "your-secret-key-here"
+}
+```
+
+📖 **[Complete Encrypted Settings Documentation](docs/encryption-settings.md)** - Comprehensive guide covering key management, encryption/decryption, security best practices, examples, and troubleshooting.
 
 ### Simple in memory cache
 
