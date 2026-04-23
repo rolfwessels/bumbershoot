@@ -1,1 +1,0 @@
-D:/Software/Dropbox/Work/Home/Ai/how-to-ai.md
