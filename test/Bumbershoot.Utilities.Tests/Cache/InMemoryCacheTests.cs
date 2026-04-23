@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Bumbershoot.Utilities.Cache;
 using AwesomeAssertions;
@@ -173,6 +176,42 @@ public class InMemoryCacheTests
         result2.Should().Be("two"); // because value is already in the cache
     }
 
+
+    [Test]
+    public async Task GetOrSet_WhenCleanupRunsConcurrently_ShouldNotThrowNullReferenceException()
+    {
+        // arrange
+        var ttl = TimeSpan.FromMilliseconds(5);
+        var cache = new InMemoryCache(ttl);
+        const int keyCount = 20;
+        for (var i = 0; i < keyCount; i++)
+            cache.Set($"key-{i}", $"initial-{i}");
+        await Task.Delay(ttl + ttl + ttl);
+
+        var errors = new ConcurrentBag<Exception>();
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+
+        // action
+        var workers = Enumerable.Range(0, 30).Select(threadId => Task.Run(async () =>
+        {
+            var rng = new Random(threadId);
+            while (!cts.IsCancellationRequested)
+            {
+                var key = $"key-{rng.Next(keyCount)}";
+                try
+                {
+                    cache.GetOrSet(key, () => $"thread-{threadId}");
+                }
+                catch (NullReferenceException ex) { errors.Add(ex); return; }
+                catch (OperationCanceledException) { return; }
+                await Task.Delay(1, CancellationToken.None);
+            }
+        }, cts.Token)).ToArray();
+        await Task.WhenAll(workers);
+
+        // assert
+        errors.Should().BeEmpty("GetOrSet must not throw NullReferenceException during concurrent cleanup");
+    }
 
     [Test]
     public void Reset_WhenCalledForAll_ShouldRemoveAllValues()
