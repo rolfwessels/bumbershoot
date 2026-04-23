@@ -34,8 +34,12 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: make pack
+        if: github.ref != 'refs/heads/main' && !contains(github.event.head_commit.message, 'publish')
+        run: make pack
+
       - name: make publish
+        if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, 'publish')
         env:
           NUGET_KEY: ${{secrets.NUGET_KEY}}
-        run: |
-          make publish
+        run: make publish

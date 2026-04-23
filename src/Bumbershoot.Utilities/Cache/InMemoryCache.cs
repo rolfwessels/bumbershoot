@@ -55,7 +55,7 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
             StartCleanup();
         else
             return cacheHolder.AsValue<Task<T>>()!;
-        return Set(key, getValue());
+        return SetAsync(key, getValue());
     }
 
 
@@ -149,7 +149,7 @@ public class InMemoryCache : ISimpleObjectCache, ISimpleObjectCacheASync
             {
                 foreach (var cacheHolder in _objectCache.ToArray())
                     if (cacheHolder.Value.IsExpired)
-                        _objectCache.TryRemove(cacheHolder.Key, out _);
+                        _objectCache.TryRemove(cacheHolder);
             });
         }
     }

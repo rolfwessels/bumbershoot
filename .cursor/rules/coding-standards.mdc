@@ -1,0 +1,8 @@
+---
+description: Read docs/how-to-ai.md at the start of every conversation for coding standards
+alwaysApply: true
+---
+
+# Coding Standards
+
+Before doing any work, **always read `docs/how-to-ai.md`** using the Read tool. It contains all coding standards, testing patterns, and project conventions. That file is the single source of truth — do not summarize or cache its contents here.

@@ -88,17 +88,34 @@ version:
 	@sed 's/Version>.*</Version>$(version-tag)</' src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj > src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch  
 	@mv  src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj.ch src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
 
-publish:  version
-	@echo -e  "Publish branch ${GREEN}$(current-branch)${NC} to ${GREEN}$(version-tag)${NC}"
+pack: version
+	@echo -e  "Pack branch ${GREEN}$(current-branch)${NC} to ${GREEN}$(version-tag)${NC}"
 	dotnet build --configuration Release
 	dotnet pack --configuration Release src/Bumbershoot.Utilities/Bumbershoot.Utilities.csproj
+
+publish: pack
 	dotnet nuget push src/Bumbershoot.Utilities/bin/Release/Bumbershoot.Utilities.*.nupkg -k ${NUGET_KEY} -s https://api.nuget.org/v3/index.json
 
 
-restore: 
+pr-review:
+	@echo "# PR Review: $$(git branch --show-current)" > PR_REVIEW.md
+	@echo "Base: main" >> PR_REVIEW.md
+	@echo "" >> PR_REVIEW.md
+	@echo "## Commits" >> PR_REVIEW.md
+	@git log main..HEAD --oneline >> PR_REVIEW.md
+	@echo "" >> PR_REVIEW.md
+	@echo "## Files Changed" >> PR_REVIEW.md
+	@git diff main...HEAD --stat >> PR_REVIEW.md
+	@echo "" >> PR_REVIEW.md
+	@echo "## Full Diff" >> PR_REVIEW.md
+	@git diff main...HEAD >> PR_REVIEW.md
+	@echo "PR_REVIEW.md generated"
+
+restore:
 	@echo -e "${GREEN}Restore $(project) nuget packages${NC}"
 	dotnet restore
 
+.PHONY: test restore publish pack pr-review deploy version help
 test: restore
 	@echo -e "${GREEN}Testing the $(project)${NC}"
 	export DOTNET_ENVIRONMENT "Development"
