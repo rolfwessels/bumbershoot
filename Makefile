@@ -111,9 +111,11 @@ pr-review:
 	@git diff main...HEAD >> PR_REVIEW.md
 	@echo "PR_REVIEW.md generated"
 
+restore:
 	@echo -e "${GREEN}Restore $(project) nuget packages${NC}"
 	dotnet restore
 
+.PHONY: test restore publish pack pr-review deploy version help
 test: restore
 	@echo -e "${GREEN}Testing the $(project)${NC}"
 	export DOTNET_ENVIRONMENT "Development"
